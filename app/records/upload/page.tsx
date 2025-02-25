@@ -6,14 +6,15 @@ import { createRecord } from './upload';
 
 function Upload() {
 
-  const [files, setFiles] = React.useState([]);
-  const [metaData, setMetadata] = React.useState<unknown[][]>([]);
+  const [files, setFiles] = React.useState<FileList | null>(null);
+  const [metaData, setMetadata] = React.useState<Array<Record<string, string>[]>>([]);
 
-  const handleMetadataInput = async (event: any) => {
+  const handleMetadataInput = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const targetFiles = event.target.files;
     // Process the uploaded files
     console.log('Selected Files: ', targetFiles)
     event.stopPropagation(); event.preventDefault();
+    if (!targetFiles) return;
     const f = targetFiles[0];
     /* f is a File */
     const data = await f.arrayBuffer();
@@ -21,17 +22,17 @@ function Upload() {
     const workbook = XLSX.read(data);
 
     console.log('Selected Workbook: ', workbook)
-    let temp = []
+    const temp = []
 
     for (let i = 0; i < workbook.SheetNames.length; i++) {
-      temp.push(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[i]]))
+      temp.push(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[i]]) as Record<string, string>[])
     }
 
     console.log("temp: ",temp)
     setMetadata(temp)
   }
 
-  const handleFileInput = (event: any) => {
+  const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>) => {
 
     const targetFiles = event.target.files;
 
@@ -42,9 +43,9 @@ function Upload() {
   };
 
   const handleUpload = async () => {
-    if (files.length === 0) return;
+    if (!files || files.length === 0) return;
 
-    for (const file of files as File[]) {
+    for (const file of Array.from(files)) {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onloadend = async () => { 
@@ -65,7 +66,7 @@ function Upload() {
   };
 
 
-  async function createData(metaData: Array<any>) {
+  async function createData(metaData: Array<Record<string, string>[]>): Promise<void> {
     console.group('Uploading Data');
     for (const sheet of metaData) {
       for (const row of sheet){     //createTodo(row.barcode, row.vendorName, row.invoiceDate, row.entryDate, row.taxCode)
@@ -84,7 +85,7 @@ function Upload() {
       <div className='upload'>
         {true && <input type="file" ref={input => { if (input) input.webkitdirectory = true; }} multiple onChange={handleFileInput} />}
         {true && <button onClick={handleUpload}
-        >Upload Pdf's</button>}
+        >Upload Files</button>}
       </div>
       <div className='upload'>
         {true && <input type="file" onChange={handleMetadataInput} />}

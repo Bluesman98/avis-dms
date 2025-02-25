@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Record from "./Record";
 
 function Table({ records, fields }: { records: any, fields: string[] }) {

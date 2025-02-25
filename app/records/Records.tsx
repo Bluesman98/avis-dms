@@ -1,19 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Table from "./Table";
 import Dropdown from "./Dropdown";
 import Search from "./Search";
 import { bool } from "aws-sdk/clients/signer";
 
-function Records({filterCategory, categories, simpleFilter, advancedFilter }: {filterCategory: any, categories: any[], simpleFilter: any, advancedFilter: any }) {
-  const [data, setData] = useState([]);
+function Records({filterCategory, categories, simpleFilter, advancedFilter }: {filterCategory: any, categories: any, simpleFilter: any, advancedFilter: any}) {
+  const [data, setData] = useState<unknown[]>([]);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
-  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<{ name: string, fields: string[] } | null>(null);
 
 
 
-  const handleFilter = async (category: any) => {
+  const handleFilter = async (category: { name: string, fields: string[] }) => {
     const filteredData = await filterCategory(category.name);
     setData(filteredData);
     setSelectedFields(category.fields);
@@ -22,7 +23,7 @@ function Records({filterCategory, categories, simpleFilter, advancedFilter }: {f
   };
 
 
-  const handleSearch = async (isAdvancedFilter : bool, searchQueries: any, searchQuery: any, selectedCategory:any, selectedFields: any) => {
+  const handleSearch = async (isAdvancedFilter : bool, searchQueries: Record<string, string>, searchQuery: string, selectedCategory: { name: string, fields: string[] }, selectedFields: string[]) => {
     if (selectedCategory) {
       if (isAdvancedFilter) {
         const filteredData = await advancedFilter(searchQueries, selectedCategory);

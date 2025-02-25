@@ -1,11 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useState } from "react";
+import { Key, useState } from "react";
 
-function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter: any, categories: any[], selectedCategory:any }) {
+function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter: any, categories:any, selectedCategory:any }) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-    function handleClick(category : any){
+    function handleClick(category: { name: string }){
         handleFilter(category);
         setIsDropdownOpen(false); // Close the dropdown after selecting a category
     }
@@ -27,7 +28,7 @@ function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter
       {isDropdownOpen && (
         <div id="dropdown" className="z-10 bg-white divide-y divide-gray-100 rounded-lg shadow-sm w-44 dark:bg-gray-700">
           <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
-            {categories.map((category, index) => (
+            {categories.map((category: { name: any; }, index: Key | null | undefined) => (
               <li className="z-30 flex-auto text-center" key={index}>
                 <a onClick={() => handleClick(category)} href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                   data-tab-target="" role="tab" aria-selected="true">

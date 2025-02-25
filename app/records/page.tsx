@@ -1,8 +1,7 @@
 'use clie';
 import { neon } from '@neondatabase/serverless';
-import Upload from './upload/page';
 import Records from './Records';
-import { create } from 'domain';
+
 
 const categories = [
     {name :'Ν.3843-2010', fields: ['folderName', 'range', 'category', 'filePath', 'subCategory']}, 
@@ -15,16 +14,16 @@ const categories = [
     {name :'ΠΡΑΞΕΙΣ ΕΦΑΡΜΟΓΗΣ', fields: ['category', 'filePath', 'area', 'buildingBlock']}
 ]
 
-async function getRecords(): Promise<any> {
+/*async function getRecords(): Promise<any> {
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
     // Insert the comment from the form into the Postgres database
   const response = await sql`SELECT * FROM kilkis`;
   console.log(response)
   return response
-  }
+  }*/
 
-  async function filterByCategory(category :string): Promise<any> {
+  async function filterByCategory(category :string): Promise<{ [key: string]: string | number }[]> {
     'use server'
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -34,7 +33,7 @@ async function getRecords(): Promise<any> {
   return response
   }
 
-  async function simpleFilter(queryString: string, category: string, fields: string[]): Promise<any> {
+  async function simpleFilter(queryString: string, category: string, fields: string[]): Promise<{ [key: string]: string | number }[]> {
     'use server';
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -52,7 +51,7 @@ async function getRecords(): Promise<any> {
     console.log(response);
     return response;
 }
-  async function advancedFilter(filters: { [key: string]: string }, category: string): Promise<any> {
+  async function advancedFilter(filters: { [key: string]: string }, category: string): Promise<{ [key: string]: string | number }[]> {
     'use server';
     // Connect to the Neon database
     const sql = neon(`${process.env.DATABASE_URL}`);
@@ -81,3 +80,5 @@ export default async function RecordsPage() {
         </div>
     );
 };
+
+
