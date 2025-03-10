@@ -1,24 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Record from "./Record";
 
-function Table({ records, fields }: { records: any, fields: string[] }) {
+function formatFieldName(fieldName: string): string {
+  return fieldName
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
-  if (!records.length) {return(<div className="text-center">No records found</div>)}
+function Table({ records, fields }: { records: any, fields: string[] }) {
+  if(!fields.length) {return(<div className="text-center">Please Select Category</div>)}
+  else if (!records.length && fields.length) {return(<div className="text-center">No records found</div>)}
   return (
     <table className="min-w-full bg-white">
       <thead>
         <tr>
-          {fields.includes('folderName') && <th className="py-2">Folder Name</th>}
-          {fields.includes('subFolderName') && <th className="py-2">Sub Folder Name</th>}
-          {fields.includes('range') && <th className="py-2">Range</th>}
-          {fields.includes('category') && <th className="py-2">Category</th>}
-          {fields.includes('filePath') && <th className="py-2">File Path</th>}
-          {fields.includes('area') && <th className="py-2">Area</th>}
-          {fields.includes('year') && <th className="py-2">Year</th>}
-          {fields.includes('protocolNo') && <th className="py-2">Protocol No</th>}
-          {fields.includes('buildingBlock') && <th className="py-2">Building Block</th>}
-          {fields.includes('aproovalNo') && <th className="py-2">Approval No</th>}
-          {fields.includes('subCategory') && <th className="py-2">Sub Category</th>}
+          {fields.map((field, index) => (
+            <th key={index} className="py-2">{formatFieldName(field)}</th>
+          ))}
           <th className="py-2">Actions</th>
         </tr>
       </thead>

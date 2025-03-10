@@ -6,7 +6,7 @@ import Dropdown from "./Dropdown";
 import Search from "./Search";
 import { bool } from "aws-sdk/clients/signer";
 
-function Records({filterCategory, categories, simpleFilter, advancedFilter }: {filterCategory: any, categories: any, simpleFilter: any, advancedFilter: any}) {
+function Records({ filterCategory, categories, simpleFilter, advancedFilter }: { filterCategory: any, categories: any, simpleFilter: any, advancedFilter: any }) {
   const [data, setData] = useState<unknown[]>([]);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
@@ -14,27 +14,31 @@ function Records({filterCategory, categories, simpleFilter, advancedFilter }: {f
 
 
 
-  const handleFilter = async (category: { name: string, fields: string[] }) => {
-    const filteredData = await filterCategory(category.name);
+  const handleFilter = async (category: {
+    id: number; name: string, fields: string[]
+  }) => {
+    const filteredData = await filterCategory(category.id);
     setData(filteredData);
     setSelectedFields(category.fields);
     setSelectedCategory(category);
-   
+
   };
 
 
-  const handleSearch = async (isAdvancedFilter : bool, searchQueries: Record<string, string>, searchQuery: string, selectedCategory: { name: string, fields: string[] }, selectedFields: string[]) => {
+  const handleSearch = async (isAdvancedFilter: bool, searchQueries: Record<string, string>, searchQuery: string, selectedCategory: {
+    id: any; name: string, fields: string[]
+  }, selectedFields: string[]) => {
     if (selectedCategory) {
       if (isAdvancedFilter) {
-        const filteredData = await advancedFilter(searchQueries, selectedCategory);
+        const filteredData = await advancedFilter(searchQueries, selectedCategory.id);
         setData(filteredData);
       } else {
-        const filteredData = await simpleFilter(searchQuery, selectedCategory, selectedFields);
+        const filteredData = await simpleFilter(searchQuery, selectedCategory.id, selectedFields);
         setData(filteredData);
       }
     }
   };
- 
+
 
   //useEffect(() => { setData(records); }, [records]);
 
@@ -42,13 +46,14 @@ function Records({filterCategory, categories, simpleFilter, advancedFilter }: {f
     <div className="relative flex flex-col w-full h-full overflow-scroll text-gray-700 bg-white shadow-md rounded-lg bg-clip-border">
 
       <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} />
-{selectedCategory && <Search
+      {selectedCategory && <Search
         selectedCategory={selectedCategory}
         selectedFields={selectedFields}
         handleSearch={handleSearch}
-        />}
+        handleFilter={handleFilter}
+      />}
 
-      <Table records={data} fields={selectedFields}  />
+      <Table records={data} fields={selectedFields} />
     </div>
   );
 }

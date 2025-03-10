@@ -1,26 +1,41 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Search({
-    handleSearch,
-selectedCategory,
-selectedFields,
+  handleSearch,
+  handleFilter,
+  selectedCategory,
+  selectedFields,
 }: {
-    handleSearch: any
-selectedCategory: any,
-selectedFields: string[]
+  handleSearch: any,
+  handleFilter: any,
+  selectedCategory: any,
+  selectedFields: string[]
 
 }) {
-      const [searchQueries, setSearchQueries] = useState<{ [key: string]: string }>({});
-      const [searchQuery, setSearchQuery] = useState('');
-      const [isAdvancedFilter, setIsAdvancedFilter] = useState(false);
+  const [searchQueries, setSearchQueries] = useState<{ [key: string]: string }>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAdvancedFilter, setIsAdvancedFilter] = useState(false);
 
 
-      const handleSearchQueryChange = (field: string, value: string) => {
-        setSearchQueries(prev => ({ ...prev, [field]: value }));
-      };
+  const handleSearchQueryChange = (field: string, value: string) => {
+    setSearchQueries(prev => ({ ...prev, [field]: value }));
+  };
+
+  function formatFieldName(fieldName: string): string {
+    return fieldName
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  useEffect(() => {
+    setSearchQuery('');
+    setSearchQueries({});
+    handleFilter(selectedCategory);
+  }, [selectedCategory, isAdvancedFilter]);
 
   return (
     <div className="w-full p-4">
@@ -44,7 +59,7 @@ selectedFields: string[]
           <div key={field} className="mb-2">
             <input
               type="text"
-              placeholder={`Search by ${field}`}
+              placeholder={`Search by ${formatFieldName(field)}`}
               value={searchQueries[field] || ''}
               onChange={(e) => handleSearchQueryChange(field, e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md"
@@ -63,7 +78,7 @@ selectedFields: string[]
         </div>
       )}
 
-      <button onClick={()=>{handleSearch(isAdvancedFilter , searchQueries, searchQuery, selectedCategory.name, selectedFields)}} className="mt-2 p-2 bg-blue-500 text-white rounded-md">Search</button>
+      <button onClick={() => { handleSearch(isAdvancedFilter, searchQueries, searchQuery, selectedCategory, selectedFields) }} className="mt-2 p-2 bg-blue-500 text-white rounded-md">Search</button>
     </div>
   );
 }
