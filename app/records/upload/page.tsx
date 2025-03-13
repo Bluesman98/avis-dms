@@ -4,6 +4,7 @@
 import React from 'react';
 import * as XLSX from 'xlsx';
 import { fetchCategory, createCategory, createRecord } from './upload';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 function Upload() {
   const [files, setFiles] = React.useState<FileList | null>(null);
@@ -217,43 +218,45 @@ function Upload() {
   }
 
   return (
-    <div className="container">
-      <div className="upload">
-        {false && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleFileInput} />}
-        {false && <button onClick={handleUpload}>Upload Files</button>}
+    <ProtectedRoute reqRole = "admin">
+      <div className="container">
+        <div className="upload">
+          {false && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleFileInput} />}
+          {false && <button onClick={handleUpload}>Upload Files</button>}
+        </div>
+        <div className="upload">
+          {false && <input type="file" onChange={(e) => { if (e.target.files) handleMetadataInput(e.target.files[0]); }} />}
+          {false && <button onClick={() => createData(metaData)}>Upload Metadata</button>}
+        </div>
+        {true && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleDirectoryInput} />}
+        {allowUpload && <button onClick={() => { createData(metaData); handleUpload(); }}>Upload Directory</button>}
+        {error && (
+          <div className="error-files">
+            <h3>{error}</h3>
+          </div>
+        )}
+        {missingFiles.length > 0 && (
+          <div className="missing-files">
+            <h3>Missing Files:</h3>
+            <ul>
+              {missingFiles.map((file, index) => (
+                <li key={index}>{file}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+              {excessFiles.length > 0 && (
+          <div className="excess-files">
+            <h3>Excess Files:</h3>
+            <ul>
+              {excessFiles.map((file, index) => (
+                <li key={index}>{file}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
-      <div className="upload">
-        {false && <input type="file" onChange={(e) => { if (e.target.files) handleMetadataInput(e.target.files[0]); }} />}
-        {false && <button onClick={() => createData(metaData)}>Upload Metadata</button>}
-      </div>
-      {true && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleDirectoryInput} />}
-      {allowUpload && <button onClick={() => { createData(metaData); handleUpload(); }}>Upload Directory</button>}
-      {error && (
-        <div className="error-files">
-          <h3>{error}</h3>
-        </div>
-      )}
-      {missingFiles.length > 0 && (
-        <div className="missing-files">
-          <h3>Missing Files:</h3>
-          <ul>
-            {missingFiles.map((file, index) => (
-              <li key={index}>{file}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-            {excessFiles.length > 0 && (
-        <div className="excess-files">
-          <h3>Excess Files:</h3>
-          <ul>
-            {excessFiles.map((file, index) => (
-              <li key={index}>{file}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    </ProtectedRoute>
   );
 }
 

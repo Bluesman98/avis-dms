@@ -9,7 +9,6 @@ export default function SignIn() {
   const [newEmail, setNewmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
-
   return (
     <div>
       <div>
@@ -26,7 +25,8 @@ export default function SignIn() {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
           />
-          <button onClick={()=>signIn(email, password)}>Sign In</button>
+          <button onClick={()=>{signIn(email, password); 
+          }}>Sign In</button>
       </div>
       <div>
           <h1>Sign Up</h1>
@@ -42,7 +42,7 @@ export default function SignIn() {
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Password"
           />
-          <button onClick={()=>signUp(email, password)}>Sign Up</button>
+          <button onClick={()=>{signUp(newEmail, newPassword, "user");}}>Sign Up</button>
       </div>
     </div>
     

@@ -4,9 +4,18 @@ import { auth } from "../lib/firebaseConfig";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 
+
 export default function Header() {
 
     const [user, setUser] = useState<User | null>(null)
+
+    const signOut = async () =>{auth.signOut().then(function() {
+      console.log('Signed Out');
+      setUser(null)
+     window.location.href = "/"
+    }, function(error) {
+      console.error('Sign Out Error', error);
+    });}
 
     useEffect(()=>{
         onAuthStateChanged(auth, (user) => {
@@ -23,7 +32,6 @@ export default function Header() {
               console.log("user is logged out")
             }
           });
-         
     }, [])
 
     return(
@@ -52,7 +60,7 @@ export default function Header() {
     </li>
     <li>
       {user ? (
-        <button onClick={() => auth.signOut()}>Sign Out</button>
+        <button onClick={() => signOut()}>Sign Out</button>
       ) : (
         <Link href="/auth/signin" legacyBehavior>
           <a className="hover:underline">Sign In</a>

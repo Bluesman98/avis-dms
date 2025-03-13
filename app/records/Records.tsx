@@ -1,18 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Table from "./Table";
 import Dropdown from "./Dropdown";
 import Search from "./Search";
 import { bool } from "aws-sdk/clients/signer";
 
-function Records({ filterCategory, categories, simpleFilter, advancedFilter }: { filterCategory: any, categories: any, simpleFilter: any, advancedFilter: any }) {
+function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any }) {
   const [data, setData] = useState<unknown[]>([]);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
-
+  const [categories, setCategories] = useState<{ id: number; name: string, fields: string[] }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<{ name: string, fields: string[] } | null>(null);
-
-
 
   const handleFilter = async (category: {
     id: number; name: string, fields: string[]
@@ -39,8 +37,13 @@ function Records({ filterCategory, categories, simpleFilter, advancedFilter }: {
     }
   };
 
-
-  //useEffect(() => { setData(records); }, [records]);
+  useEffect(() => {
+    const fetchData = async () => {
+      const temp = await fetchCategories();
+      setCategories(temp);
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="relative flex flex-col w-full h-full overflow-scroll text-gray-700 bg-white shadow-md rounded-lg bg-clip-border">

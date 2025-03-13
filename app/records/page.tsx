@@ -2,6 +2,7 @@
 
 import { neon } from '@neondatabase/serverless';
 import Records from './Records';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 
 export async function fetchCategories() {
@@ -85,16 +86,18 @@ export async function fetchCategories() {
 }
 export default async function RecordsPage() {
 
-    const categories =  await fetchCategories()
-    console.log('Fetched Categories', categories) 
+   // const categories =  await fetchCategories()
+    //console.log('Fetched Categories', categories) 
 
     return (
-        <div>
-            <h1>Records Page</h1>
-            <p>This is the records page.</p>
+        <ProtectedRoute reqRole="admin">
+          <div>
+              <h1>Records Page</h1>
+              <p>This is the records page.</p>
           
-            <Records filterCategory={filterByCategory} categories={categories} simpleFilter={simpleFilter} advancedFilter={advancedFilter}/>
-        </div>
+              <Records filterCategory={filterByCategory} fetchCategories = {fetchCategories}simpleFilter={simpleFilter} advancedFilter={advancedFilter}/>
+          </div>
+        </ProtectedRoute>
     );
 };
 
