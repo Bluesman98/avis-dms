@@ -7,7 +7,8 @@ import { getFirestore, doc, getDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: any;
-  role: string | null;
+  roles: string[] | null;
+  permissions: string[] | null;
   loading: boolean;
 }
 
@@ -15,7 +16,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<any>(null);
-  const [role, setRole] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[] | null>(null);
+  const [permissions, setPermissions] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,14 +28,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const firestore = getFirestore();
         const userDoc = await getDoc(doc(firestore, 'users', user.uid));
         if (userDoc.exists()) {
-            console.log("userDoc", userDoc.data())
-          setRole(userDoc.data().role);
+          setRoles(userDoc.data().role || []);
+          setPermissions(userDoc.data().permissions || []);
         } else {
-          setRole(null);
+          setRoles(null);
+          setPermissions(null);
         }
       } else {
         setUser(null);
-        setRole(null);
+        setRoles(null);
+        setPermissions(null);
       }
       setLoading(false);
     });
@@ -42,7 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, role, loading }}>
+    <AuthContext.Provider value={{ user, roles, permissions, loading }}>
       {children}
     </AuthContext.Provider>
   );

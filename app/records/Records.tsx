@@ -5,6 +5,7 @@ import Table from "./Table";
 import Dropdown from "./Dropdown";
 import Search from "./Search";
 import { bool } from "aws-sdk/clients/signer";
+import { useAuth } from "@/lib/AuthContext";
 
 function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any }) {
   const [data, setData] = useState<unknown[]>([]);
@@ -19,9 +20,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     setData(filteredData);
     setSelectedFields(category.fields);
     setSelectedCategory(category);
-
   };
-
 
   const handleSearch = async (isAdvancedFilter: bool, searchQueries: Record<string, string>, searchQuery: string, selectedCategory: {
     id: any; name: string, fields: string[]
@@ -37,17 +36,23 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     }
   };
 
+  const {  roles, permissions } = useAuth();
+
   useEffect(() => {
+    
+  const fetchCategoriesWithAuth = async () => {
+    return await fetchCategories(roles, permissions);
+  };
+
     const fetchData = async () => {
-      const temp = await fetchCategories();
+      const temp = await fetchCategoriesWithAuth();
       setCategories(temp);
     };
     fetchData();
-  }, []);
+  }, [fetchCategories, permissions, roles]);
 
   return (
     <div className="relative flex flex-col w-full h-full overflow-scroll text-gray-700 bg-white shadow-md rounded-lg bg-clip-border">
-
       <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} />
       {selectedCategory && <Search
         selectedCategory={selectedCategory}
@@ -55,7 +60,6 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
         handleSearch={handleSearch}
         handleFilter={handleFilter}
       />}
-
       <Table records={data} fields={selectedFields} />
     </div>
   );

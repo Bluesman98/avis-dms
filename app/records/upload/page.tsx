@@ -218,7 +218,7 @@ function Upload() {
   }
 
   return (
-    <ProtectedRoute reqRole = "admin">
+    <ProtectedRoute reqRole = {["admin"]}>
       <div className="container">
         <div className="upload">
           {false && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleFileInput} />}

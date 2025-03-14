@@ -26,6 +26,7 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
     handleRetrieve(record.file_path.replace(/\\/g, "-"));
   }, [record.file_path]);
 
+
   //const { folderName, subFolderName, range, category, filePath, area, year, protocolNo, buildingBlock, aproovalNo, subCategory } = record || {};
   return (
     <tr>

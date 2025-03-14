@@ -42,7 +42,7 @@ export default function SignIn() {
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Password"
           />
-          <button onClick={()=>{signUp(newEmail, newPassword, "user");}}>Sign Up</button>
+          <button onClick={()=>{signUp(newEmail, newPassword, "user", []);}}>Sign Up</button>
       </div>
     </div>
     
