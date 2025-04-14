@@ -4,7 +4,7 @@ import { neon } from '@neondatabase/serverless';
 import Records from './Records';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
-export async function fetchCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number) {
+ /*async function fetchCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number) {
   'use server';
 
   // Check if the user is an admin or has permissions for the given category
@@ -36,9 +36,9 @@ export async function fetchCategory(userRole: string | null, userPermissions: Re
     name: category_name,
     fields: fieldNames,
   };
-}
+}*/
 
-export async function fetchCategories(userRole: string | null, userPermissions: Record<string, string[]> | null) {
+ async function fetchCategories(userRole: string | null, userPermissions: Record<string, string[]> | null): Promise<{ id: any; name: any; fields: string[] }[]> {
   'use server';
 
   // Connect to the Neon database
@@ -69,7 +69,7 @@ export async function fetchCategories(userRole: string | null, userPermissions: 
   return categories;
 }
 
-export async function fetchDisplayName(field_name: string): Promise<string | null> {
+ async function fetchDisplayName(field_name: string): Promise<string | null> {
   'use server';
 
   // Connect to the Neon database
@@ -86,7 +86,7 @@ export async function fetchDisplayName(field_name: string): Promise<string | nul
   return response[0].display_name;
 }
 
-export async function filterByCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number): Promise<{ [key: string]: string | number }[]> {
+ async function filterByCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number): Promise<{ [key: string]: string | number }[]> {
   'use server';
 
   // Check if the user has 'read' permissions for the given category

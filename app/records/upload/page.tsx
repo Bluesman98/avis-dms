@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React from 'react';
@@ -162,6 +161,7 @@ function Upload() {
   async function categoryCheck(i: number) {
     // Check if the category exists
     const sheet = sheetNames[i];
+    if (!sheet) return null;
     const category = await fetchCategory(sheet);
     console.log('Sheet: ', sheet);
     console.log('Category: ', category);
