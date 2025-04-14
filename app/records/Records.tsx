@@ -7,7 +7,7 @@ import Search from "./Search";
 import { bool } from "aws-sdk/clients/signer";
 import { useAuth } from "@/lib/AuthContext";
 
-function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any }) {
+function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter,fetchDisplayName }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any, fetchDisplayName: any }) {
   const [data, setData] = useState<unknown[]>([]);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ id: number; name: string, fields: string[] }[]>([]);
@@ -16,7 +16,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
   const handleFilter = async (category: {
     id: number; name: string, fields: string[]
   }) => {
-    const filteredData = await filterCategory(category.id);
+    const filteredData = await filterCategory(roles, permissions,category.id);
     setData(filteredData);
     setSelectedFields(category.fields);
     setSelectedCategory(category);
@@ -36,20 +36,25 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     }
   };
 
-  const {  roles, permissions } = useAuth();
+  const { user, roles, permissions } = useAuth();
 
   useEffect(() => {
-    
-  const fetchCategoriesWithAuth = async () => {
-    return await fetchCategories(roles, permissions);
-  };
-
     const fetchData = async () => {
-      const temp = await fetchCategoriesWithAuth();
+      const temp = await fetchCategories(roles, permissions);
+     /* if (roles && roles.includes("admin")) setCategories(temp);
+      else {
+      const filteredCategories = temp.filter((category: { id: number }) => {
+        return permissions && permissions[category.id.toString()] && permissions[category.id.toString()].includes("read");
+      });
+      setCategories(filteredCategories);}*/
       setCategories(temp);
     };
     fetchData();
-  }, [fetchCategories, permissions, roles]);
+
+    console.log('User: ', user);
+    console.log('Roles: ', roles);
+    console.log('Permissions: ', permissions);
+  }, [fetchCategories, permissions]);
 
   return (
     <div className="relative flex flex-col w-full h-full overflow-scroll text-gray-700 bg-white shadow-md rounded-lg bg-clip-border">
@@ -59,8 +64,9 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
         selectedFields={selectedFields}
         handleSearch={handleSearch}
         handleFilter={handleFilter}
+        fetchDisplayName={fetchDisplayName}
       />}
-      <Table records={data} fields={selectedFields} />
+      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName}/>
     </div>
   );
 }
