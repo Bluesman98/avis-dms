@@ -2,7 +2,7 @@
 
 import React from 'react';
 import * as XLSX from 'xlsx';
-import { fetchCategory, createCategory, createRecord } from './upload';
+import { fetchCategory, createRecord as uploadCreateRecord } from './upload';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 function Upload() {
@@ -81,18 +81,30 @@ function Upload() {
       metaData = await handleMetadataInput(excelFile);
     }
 
-    const fileNames = Array.from(targetFiles).filter(file => file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && file.type !== 'application/vnd.ms-excel')
-    .map(file => file.name);
+    const fileNames = Array.from(targetFiles)
+      .filter(file => file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && file.type !== 'application/vnd.ms-excel')
+      .map(file => file.name);
+
     const sheetFileNames = new Set<string>();
     const missingFilesList: string[] = [];
     const excessFilesList: string[] = [];
+    const duplicateFilesList: string[] = [];
+    const seenFilePaths = new Set<string>();
 
     for (const sheet of metaData) {
       for (const row of sheet) {
-        const filePath = row['Filepath'];
+        const filePath = row['file_path'];
         const fileName = filePath.split('\\').pop();
         if (fileName) {
           sheetFileNames.add(fileName);
+
+          // Check for duplicates
+          if (seenFilePaths.has(filePath)) {
+            duplicateFilesList.push(filePath);
+          } else {
+            seenFilePaths.add(filePath);
+          }
+
           if (!fileNames.includes(fileName)) {
             missingFilesList.push(fileName);
           }
@@ -102,7 +114,7 @@ function Upload() {
 
     for (const fileName of fileNames) {
       if (!sheetFileNames.has(fileName)) {
-       excessFilesList.push(fileName);
+        excessFilesList.push(fileName);
       }
     }
 
@@ -122,13 +134,18 @@ function Upload() {
       console.log('No excess files.');
     }
 
-    if(missingFilesList.length === 0 && excessFilesList.length === 0) {
+    if (duplicateFilesList.length > 0) {
+      setError(`Duplicate file paths found: ${duplicateFilesList.join(', ')}`);
+      console.error('Duplicate file paths: ', duplicateFilesList);
+    } else {
+      console.log('No duplicate file paths.');
+    }
+
+    if (missingFilesList.length === 0 && excessFilesList.length === 0 && duplicateFilesList.length === 0) {
       setFiles(targetFiles);
       setMetadata(metaData);
       setAllowUpload(true);
     }
-
-    // Proceed with further processing if needed
   };
 
   const handleUpload = async () => {
@@ -154,67 +171,84 @@ function Upload() {
     }
   };
 
-  function isNull(value: string): boolean {
+  /*function isNull(value: string): boolean {
     return value !== null && value !== undefined;
-  }
+  }*/
 
   async function categoryCheck(i: number) {
-    // Check if the category exists
     const sheet = sheetNames[i];
     if (!sheet) return null;
+  
     const category = await fetchCategory(sheet);
     console.log('Sheet: ', sheet);
     console.log('Category: ', category);
-
-    // If the category does not exist, create it
-    if (category.length === 0 && metaData[i].length > 0) {
-      await createCategory(
-        sheet,
-        isNull(metaData[i][0]['ΦΑΚΕΛΟΣ']),
-        isNull(metaData[i][0]['ΥΠΟΦΑΚΕΛΟΣ']),
-        isNull(metaData[i][0]['ΕΥΡΟΣ']),
-        isNull(metaData[i][0]['Ονομασία Αρχείου']),
-        isNull(metaData[i][0]['Filepath']),
-        isNull(metaData[i][0]['ΠΕΡΙΟΧΗ']),
-        isNull(metaData[i][0]['ΕΤΟΣ']),
-        isNull(metaData[i][0]['ΑΡ. ΠΡΩΤΟΚΟΛΟΥ']),
-        isNull(metaData[i][0]['Ο.Τ.']),
-        isNull(metaData[i][0]['ΑΡ. ΕΓΚΡΙΣΗΣ']),
-        isNull(metaData[i][0]['Κατηγορία'])
-      );
+  
+    if (!category || category.length === 0) {
+      const errorMessage = `Category for sheet "${sheet}" does not exist in the database.`;
+      setError(errorMessage);
+      console.error(errorMessage);
+      throw new Error(errorMessage); // Throw an error to stop further processing
     }
-
+  
     return category[0];
   }
 
   async function createData(metaData: Array<Record<string, string>[]>): Promise<void> {
     console.group('Uploading Data');
-
+  
     for (let i = 0; i < sheetNames.length; i++) {
-      const category = await categoryCheck(i);
-      if (category) {
-        for (let j = 0; j < metaData[i].length; j++) {
-          const row = metaData[i][j];
-          await createRecord(
-            Number(category.id),
-            row['ΦΑΚΕΛΟΣ'],
-            row['ΥΠΟΦΑΚΕΛΟΣ'],
-            row['ΕΥΡΟΣ'],
-            row['Ονομασία Αρχείου'],
-            row['Filepath'],
-            row['ΠΕΡΙΟΧΗ'],
-            row['ΕΤΟΣ'],
-            row['ΑΡ. ΠΡΩΤΟΚΟΛΟΥ'],
-            row['Ο.Τ.'],
-            row['ΑΡ. ΕΓΚΡΙΣΗΣ'],
-            row['Κατηγορία']
+      try {
+        const category = await categoryCheck(i);
+        if (category) {
+          const categoryFields = new Set(
+            Object.keys(category).filter(
+              (key) => typeof category[key] === 'boolean' && category[key] === true && key !== 'id' && key !== 'category_name'
+            )
           );
-
-          console.log(row);
+  
+          console.log('Category fields:', categoryFields);
+  
+          for (let j = 0; j < metaData[i].length; j++) {
+            const row = metaData[i][j];
+  
+            // Validate that the row fields match the category fields
+            const rowFields = Object.keys(row);
+            const invalidFields = rowFields.filter((field) => !categoryFields.has(field));
+  
+            if (invalidFields.length > 0) {
+              console.error(`Row contains invalid fields: ${invalidFields.join(', ')}`);
+              continue; // Skip this row if it contains invalid fields
+            }
+  
+            // Construct the record data dynamically
+            const recordData: Partial<Record<string, string>> = {};
+            categoryFields.forEach((field) => {
+              if (row[field] !== undefined) {
+                recordData[field] = row[field];
+              }
+            });
+  
+            // Proceed to create the record
+            const filteredRecordData = Object.fromEntries(
+              Object.entries(recordData).filter(([, value]) => value !== undefined)
+            ) as Record<string, string>;
+            await uploadCreateRecord(Number(category.id), filteredRecordData);
+  
+            console.log('Created record:', recordData);
+          }
         }
+      } catch (error) {
+        if (error instanceof Error) {
+          console.error('Error creating data:', error.message);
+        } else {
+          console.error('Error creating data:', error);
+        }
+        break; // Stop processing further sheets if an error occurs
       }
     }
+  
     console.log('Completed: ', metaData);
+    console.groupEnd();
   }
 
   return (
@@ -232,7 +266,8 @@ function Upload() {
         {allowUpload && <button onClick={() => { createData(metaData); handleUpload(); }}>Upload Directory</button>}
         {error && (
           <div className="error-files">
-            <h3>{error}</h3>
+            <h3>Error:</h3>
+            <p>{error}</p>
           </div>
         )}
         {missingFiles.length > 0 && (
@@ -261,3 +296,4 @@ function Upload() {
 }
 
 export default Upload;
+
