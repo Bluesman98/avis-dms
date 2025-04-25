@@ -13,6 +13,7 @@ function Upload() {
   const [excessFiles, setExcessFiles] = React.useState<string[]>([]);
   const [allowUpload, setAllowUpload] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
+  //const [uploadedRecords, setUploadedRecords] = React.useState<{ id: number; fileName: string }[]>([]);
 
   const handleMetadataInput = async (file: File) => {
     const data = await file.arrayBuffer();
@@ -30,13 +31,13 @@ function Upload() {
     return temp
   };
 
-  const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>) => {
+  /*const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     const targetFiles = event.target.files;
 
     // Process the uploaded files
     setFiles(targetFiles);
     console.log('Selected Files: ', targetFiles);
-  };
+  };*/
 
    function checkFileTypes(targetFiles: FileList): boolean {
     let excelCounter = 0;
@@ -148,25 +149,36 @@ function Upload() {
     }
   };
 
-  const handleUpload = async () => {
+  const handleUpload = async (uploadedRecords: { id: number; fileName: string }[]) => {
     if (!files || files.length === 0) return;
-
-    for (const file of Array.from(files)) {
+  
+    for (const file of Array.from(files).filter(file => file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' && file.type !== 'application/vnd.ms-excel')) {
+      const record = uploadedRecords.find((record) => record.fileName === file.name);
+      if (!record) {
+        console.error(`No record found for file: ${file.name}`);
+        continue;
+      }
+  
       const reader = new FileReader();
       reader.readAsDataURL(file);
+  
       reader.onloadend = async () => {
         const base64File = reader.result?.toString().split(',')[1];
-
+  
+        // Update the file name to include the record ID
+        const newFileName = `${record.id}_${file.name}`;
+  
+        // Upload the file with the new name
         const response = await fetch('/api/upload', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ file: base64File, fileName: file.name }),
+          body: JSON.stringify({ file: base64File, fileName: newFileName }),
         });
-
+  
         const result = await response.json();
-        console.log(result);
+        console.log('Upload result:', result);
       };
     }
   };
@@ -193,8 +205,10 @@ function Upload() {
     return category[0];
   }
 
-  async function createData(metaData: Array<Record<string, string>[]>): Promise<void> {
+  async function createData(metaData: Array<Record<string, string>[]>): Promise<{ id: number; fileName: string }[]> {
     console.group('Uploading Data');
+  
+    const newUploadedRecords: { id: number; fileName: string }[] = [];
   
     for (let i = 0; i < sheetNames.length; i++) {
       try {
@@ -228,11 +242,22 @@ function Upload() {
               }
             });
   
-            // Proceed to create the record
+            // Proceed to create the record and get the record ID
             const filteredRecordData = Object.fromEntries(
               Object.entries(recordData).filter(([, value]) => value !== undefined)
             ) as Record<string, string>;
-            await uploadCreateRecord(Number(category.id), filteredRecordData);
+            const recordId = await uploadCreateRecord(Number(category.id), filteredRecordData);
+  
+            // Store the record ID and file name
+            if (row['file_path']) {
+              const filePath = row['file_path'];
+              const fileName = filePath.split('\\').pop();
+              if (fileName) {
+                newUploadedRecords.push({ id: recordId, fileName: fileName });
+              } else {
+                console.error('File name is undefined for file path:', filePath);
+              }
+            }
   
             console.log('Created record:', recordData);
           }
@@ -249,21 +274,33 @@ function Upload() {
   
     console.log('Completed: ', metaData);
     console.groupEnd();
+  
+    return newUploadedRecords;
   }
 
   return (
-    <ProtectedRoute reqRole = {["admin"]}>
+    <ProtectedRoute reqRole={["admin"]}>
       <div className="container">
         <div className="upload">
-          {false && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleFileInput} />}
-          {false && <button onClick={handleUpload}>Upload Files</button>}
+          <input
+            type="file"
+            ref={(input) => {
+              if (input) input.webkitdirectory = true;
+            }}
+            multiple
+            onChange={handleDirectoryInput}
+          />
+          {allowUpload && (
+            <button
+              onClick={async () => {
+                const newRecords = await createData(metaData);
+                await handleUpload(newRecords);
+              }}
+            >
+              Upload Directory
+            </button>
+          )}
         </div>
-        <div className="upload">
-          {false && <input type="file" onChange={(e) => { if (e.target.files) handleMetadataInput(e.target.files[0]); }} />}
-          {false && <button onClick={() => createData(metaData)}>Upload Metadata</button>}
-        </div>
-        {true && <input type="file" ref={(input) => { if (input) input.webkitdirectory = true; }} multiple onChange={handleDirectoryInput} />}
-        {allowUpload && <button onClick={() => { createData(metaData); handleUpload(); }}>Upload Directory</button>}
         {error && (
           <div className="error-files">
             <h3>Error:</h3>
@@ -280,7 +317,7 @@ function Upload() {
             </ul>
           </div>
         )}
-              {excessFiles.length > 0 && (
+        {excessFiles.length > 0 && (
           <div className="excess-files">
             <h3>Excess Files:</h3>
             <ul>

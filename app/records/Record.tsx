@@ -19,15 +19,19 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
     if (result.fileUrl) {
       setRetrievedFileUrl(result.fileUrl);
     }
-    //console.log(result);
   };
 
   useEffect(() => {
-    handleRetrieve(record.file_path.replace(/\\/g, "-"));
-  }, [record.file_path]);
+    // Extract the file name from the file path
+    const fileName = record.file_path.split('\\').pop(); // Get the last part of the path
+    if (fileName) {
+      handleRetrieve(`${record.id}_${fileName}`);
+      console.log('File name:', `${record.id_}_${fileName}`);
+    } else {
+      console.error('File name could not be extracted from file path:', record.file_path);
+    }
+  }, [record.id_, record.file_path]);
 
-
-  //const { folderName, subFolderName, range, category, filePath, area, year, protocolNo, buildingBlock, aproovalNo, subCategory } = record || {};
   return (
     <tr>
       {fields.map((field, index) => (

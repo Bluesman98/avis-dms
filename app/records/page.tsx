@@ -101,7 +101,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
   // Fetch records by category
-  const response = await sql`SELECT * FROM kilkis WHERE category_id = ${category_id}`;
+  const response = await sql`SELECT id, * FROM kilkis WHERE category_id = ${category_id}`;
   console.log(response);
   return response;
 }
@@ -110,8 +110,9 @@ async function simpleFilter(queryString: string, category_id: number, fields: st
   'use server';
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
+
   // Build the SQL query dynamically based on the provided fields
-  let query = `SELECT * FROM kilkis WHERE category_id = $1 AND (`;
+  let query = `SELECT id, ${fields.map((field) => `"${field}"`).join(', ')} FROM kilkis WHERE category_id = $1 AND (`;
   const params = [String(category_id)];
   fields.forEach((field, index) => {
     if (index > 0) query += ' OR ';
@@ -119,6 +120,7 @@ async function simpleFilter(queryString: string, category_id: number, fields: st
     params.push(`%${queryString}%`);
   });
   query += ')';
+
   console.log('Query: ', query);
   const response = await sql(query, params);
   console.log(response);
@@ -129,8 +131,9 @@ async function advancedFilter(filters: { [key: string]: string }, category_id: n
   'use server';
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
+
   // Build the SQL query dynamically based on the provided filters
-  let query = `SELECT * FROM kilkis WHERE category_id = $1`;
+  let query = `SELECT id, * FROM kilkis WHERE category_id = $1`;
   const params = [String(category_id)];
   let paramIndex = 2;
   for (const field in filters) {
@@ -140,6 +143,8 @@ async function advancedFilter(filters: { [key: string]: string }, category_id: n
       paramIndex++;
     }
   }
+
+  console.log('Query: ', query);
   const response = await sql(query, params);
   console.log(response);
   return response;

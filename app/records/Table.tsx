@@ -13,6 +13,8 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [recordsPerPage, setRecordsPerPage] = useState<number>(10); // Default to 10 records per page
 
   useEffect(() => {
     const fetchDisplayNames = async () => {
@@ -46,6 +48,39 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
     return 0;
   });
 
+  // Pagination logic
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = sortedRecords.slice(indexOfFirstRecord, indexOfLastRecord);
+
+  const totalPages = records.length > 0 ? Math.ceil(records.length / recordsPerPage) : 1;
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleRecordsPerPageChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setRecordsPerPage(Number(event.target.value));
+    setCurrentPage(1); // Reset to the first page when changing the number of records per page
+  };
+
+  const handlePageClick = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  console.log('Records Length:', records.length);
+  console.log('Records Per Page:', recordsPerPage);
+  console.log('Total Pages:', totalPages);
+  console.log('Current Page:', currentPage);
+
   if (!fields.length) {
     return <div className="text-center">Please Select Category</div>;
   } else if (!records.length && fields.length) {
@@ -53,28 +88,113 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
   }
 
   return (
-    <table className="min-w-full bg-white">
-      <thead>
-        <tr>
-          {fields.map((field, index) => (
-            <th
-              key={index}
-              className="py-2 cursor-pointer"
-              onClick={() => handleSort(field)}
-            >
-              {displayNames[field] || formatFieldName(field)}
-              {sortField === field && (sortOrder === "asc" ? " ▲" : " ▼")}
-            </th>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <label htmlFor="recordsPerPage" className="mr-2">Records per page:</label>
+          <select
+            id="recordsPerPage"
+            value={recordsPerPage}
+            onChange={handleRecordsPerPageChange}
+            className="px-2 py-1 border rounded"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
+        <div>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+        </div>
+      </div>
+
+      <table className="min-w-full bg-white">
+        <thead>
+          <tr>
+            {fields.map((field, index) => (
+              <th
+                key={index}
+                className="py-2 cursor-pointer"
+                onClick={() => handleSort(field)}
+              >
+                {displayNames[field] || formatFieldName(field)}
+                {sortField === field && (sortOrder === "asc" ? " ▲" : " ▼")}
+              </th>
+            ))}
+            <th className="py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentRecords.map((record: any) => (
+            <Record key={record.id} record={record} fields={fields} />
           ))}
-          <th className="py-2">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {sortedRecords.map((record: any) => (
-          <Record key={record.id} record={record} fields={fields} />
-        ))}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-between items-center mt-4">
+        {/* Button to go to the first page */}
+        <button
+          onClick={() => handlePreviousPage()}
+          disabled={currentPage === 1}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Previous
+        </button>
+
+        {/* Dynamically render page numbers with ellipses */}
+        <div className="flex space-x-2">
+          {Array.from({ length: totalPages }, (_, index) => index + 1)
+            .filter((pageNumber) => {
+              // Show the first page, last page, second page, second-to-last page, and 3 pages before/after the current page
+              return (
+                pageNumber === 1 ||
+                pageNumber === totalPages ||
+                pageNumber === 2 ||
+                pageNumber === totalPages - 1 ||
+                (pageNumber >= currentPage - 2 && pageNumber <= currentPage + 2)
+              );
+            })
+            .reduce((acc: (number | string)[], pageNumber, index, array) => {
+              // Add ellipses if there is a gap between consecutive pages
+              if (index > 0 && pageNumber !== array[index - 1] + 1) {
+                acc.push("...");
+              }
+              acc.push(pageNumber);
+              return acc;
+            }, [])
+            .map((pageNumber, index) =>
+              typeof pageNumber === "number" ? (
+                <button
+                  key={pageNumber}
+                  onClick={() => handlePageClick(pageNumber)}
+                  className={`px-3 py-1 rounded ${
+                    currentPage === pageNumber ? "bg-blue-500 text-white" : "bg-gray-200"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              ) : (
+                <span key={`ellipsis-${index}`} className="px-3 py-1">
+                  {pageNumber}
+                </span>
+              )
+            )}
+        </div>
+
+        {/* Button to go to the last page */}
+        <button
+          onClick={() => handleNextPage()}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
   );
 }
 

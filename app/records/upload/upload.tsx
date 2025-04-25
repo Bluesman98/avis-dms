@@ -16,7 +16,7 @@ export async function createRecord(
     aproovalNo: string;
     subCategory: string;
   }>
-): Promise<void> {
+): Promise<number> {
   'use server';
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
@@ -28,16 +28,17 @@ export async function createRecord(
   // Dynamically construct the SQL query
   const fieldsString = fields.map((field) => `"${field}"`).join(', ');
   const placeholders = fields.map((_, index) => `$${index + 1}`).join(', ');
-  const query = `INSERT INTO kilkis (${fieldsString}) VALUES (${placeholders})`;
-  await sql(query, values);
+  const query = `INSERT INTO kilkis (${fieldsString}) VALUES (${placeholders}) RETURNING id`;
 
   console.log('Fields:', fields);
   console.log('Values:', values);
 
-  // Execute the query
-  await query;
+  // Execute the query and return the inserted ID
+  const result = await sql(query, values);
+  const insertedId = result[0]?.id;
 
-  console.log('Record created successfully');
+  console.log('Record created successfully with ID:', insertedId);
+  return insertedId;
 }
 
 export async function createCategory(
