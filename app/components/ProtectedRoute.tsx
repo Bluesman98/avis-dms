@@ -1,5 +1,5 @@
 'use client';
-import { useAuth } from '../lib/AuthContext';
+import { useAuth } from '../../lib/AuthContext';
 import NotAuthorized from '@/pages/400';
 
 const ProtectedRoute = ({ children, reqRole }: { children: React.ReactNode; reqRole: string[] }) => {

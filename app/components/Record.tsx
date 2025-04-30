@@ -35,9 +35,9 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
   return (
     <tr>
       {fields.map((field, index) => (
-        <td key={index} className="p-4 border-b border-slate-200">{record[field]}</td>
+        <td key={index} className="p-4 border-t border-slate-200">{record[field]}</td>
       ))}
-      <td className="p-4 border-b border-slate-200">
+      <td className="p-4 border-t border-slate-200">
         <a href={retrievedFileUrl || ''} target="_blank" rel="noopener noreferrer">View File</a>
       </td>
     </tr>

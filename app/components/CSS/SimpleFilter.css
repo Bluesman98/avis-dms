@@ -1,0 +1,62 @@
+.simple-filter {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 70%;
+  gap: 1rem;
+}
+
+.simple-filter h2 {
+  font-size: 1.5em;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.simple-filter label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555;
+}
+
+.simple-filter input[type="text"],
+.simple-filter select {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  flex: 1;
+}
+
+.simple-filter button {
+  background-color: #d4002a !important;
+  border: 1px solid #d4002a;
+  color: white !important;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 800 !important;
+}
+
+.simple-filter button:hover {
+  background-color: #0056b3;
+}
+
+.simple-filter button + button {
+  flex: 1;
+  background-color: white !important;
+  color: black !important;
+  border-color: black !important;
+}
+
+.simple-filter button + button:hover {
+  background-color: white !important;
+  color: #d4002a !important;
+  border-color: #d4002a !important;
+}

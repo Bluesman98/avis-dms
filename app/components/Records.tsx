@@ -57,7 +57,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
   }, [fetchCategories, permissions]);
 
   return (
-    <div className="relative flex flex-col w-full h-full overflow-scroll text-gray-700 bg-white shadow-md rounded-lg bg-clip-border">
+    <div className="">
       <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} />
       {selectedCategory && <Search
         selectedCategory={selectedCategory}

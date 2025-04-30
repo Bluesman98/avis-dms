@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Record from "./Record";
 
 function formatFieldName(fieldName: string): string {
@@ -81,22 +81,24 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
   console.log('Total Pages:', totalPages);
   console.log('Current Page:', currentPage);
 
-  if (!fields.length) {
+  /*if (!fields.length) {
     return <div className="text-center">Please Select Category</div>;
   } else if (!records.length && fields.length) {
     return <div className="text-center">No records found</div>;
-  }
+  }*/
+
+    if (!records.length) return null;
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-4 ">
         <div>
-          <label htmlFor="recordsPerPage" className="mr-2">Records per page:</label>
+          <label htmlFor="recordsPerPage" className="mr-2 font-semibold text-white" >Records per page:</label>
           <select
             id="recordsPerPage"
             value={recordsPerPage}
             onChange={handleRecordsPerPageChange}
-            className="px-2 py-1 border rounded"
+            className="px-2 py-1  bg-white text-black"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -105,29 +107,29 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
           </select>
         </div>
         <div>
-          <span>
+          <span className="font-semibold text-white">
             Page {currentPage} of {totalPages}
           </span>
         </div>
       </div>
 
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
+      <table className="min-w-full bg-white rounded-md" >
+        <thead className="py-4">
+          <tr >
             {fields.map((field, index) => (
               <th
                 key={index}
-                className="py-2 cursor-pointer"
+                className="pl-4 py-4 text-left cursor-pointer"
                 onClick={() => handleSort(field)}
               >
                 {displayNames[field] || formatFieldName(field)}
                 {sortField === field && (sortOrder === "asc" ? " ▲" : " ▼")}
               </th>
             ))}
-            <th className="py-2">Actions</th>
+            <th className="pl-4 py-4 text-left cursor-pointer">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="rounded-md"> 
           {currentRecords.map((record: any) => (
             <Record key={record.id} record={record} fields={fields} />
           ))}
@@ -135,18 +137,18 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
       </table>
 
       {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-4">
+      <div className="flex justify-between items-center mt-4 ">
         {/* Button to go to the first page */}
         <button
           onClick={() => handlePreviousPage()}
           disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="mr-2 p-2 bg-black text-white rounded-md font-semibold disabled:opacity-50"
         >
           Previous
         </button>
 
         {/* Dynamically render page numbers with ellipses */}
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 text-white">
           {Array.from({ length: totalPages }, (_, index) => index + 1)
             .filter((pageNumber) => {
               // Show the first page, last page, second page, second-to-last page, and 3 pages before/after the current page
@@ -172,7 +174,7 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
                   key={pageNumber}
                   onClick={() => handlePageClick(pageNumber)}
                   className={`px-3 py-1 rounded ${
-                    currentPage === pageNumber ? "bg-blue-500 text-white" : "bg-gray-200"
+                    currentPage === pageNumber ? "bg-black text-white" : "bg-white text-black"
                   }`}
                 >
                   {pageNumber}
@@ -189,7 +191,7 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
         <button
           onClick={() => handleNextPage()}
           disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          className="mr-2 py-2 px-4 bg-black text-white rounded-md font-semibold disabled:opacity-50"
         >
           Next
         </button>

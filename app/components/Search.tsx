@@ -58,17 +58,17 @@ function Search({
   }, [selectedFields, fetchDisplayName]);
 
   return (
-    <div className="w-full p-4">
-      <div className="flex justify-start items-center mb-4">
+    <div className="w-fit p-4">
+      <div className="flex justify-start items-center mb-4 gap-2">
         <button
           onClick={() => setIsAdvancedFilter(false)}
-          className={`p-2 rounded-md ${!isAdvancedFilter ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+          className={`p-2 rounded-md font-semibold ${!isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Simple Filter
         </button>
         <button
           onClick={() => setIsAdvancedFilter(true)}
-          className={`p-2 rounded-md ${isAdvancedFilter ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+          className={`p-2 rounded-md font-semibold ${isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Advanced Filter
         </button>
@@ -76,13 +76,13 @@ function Search({
 
       {isAdvancedFilter ? (
         selectedFields.map(field => (
-          <div key={field} className="mb-2">
+          <div key={field} className="mb-2 ">
             <input
               type="text"
               placeholder={`Search by ${displayNames[field] || formatFieldName(field)}`}
               value={searchQueries[field] || ''}
               onChange={(e) => handleSearchQueryChange(field, e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md text-black"
             />
           </div>
         ))
@@ -93,7 +93,7 @@ function Search({
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className="w-full p-2 border border-gray-300 rounded-md text-black"
           />
         </div>
       )}
@@ -101,13 +101,13 @@ function Search({
       <div className="flex justify-start items-center mt-4">
         <button
           onClick={() => handleSearch(isAdvancedFilter, searchQueries, searchQuery, selectedCategory, selectedFields)}
-          className="mr-2 p-2 bg-blue-500 text-white rounded-md"
+          className="mr-2 p-2 bg-[#d4002a] text-white rounded-md font-semibold"
         >
           Search
         </button>
         <button
           onClick={handleClearSearch}
-          className="p-2 bg-gray-200 text-gray-700 rounded-md"
+          className="bg-white text-[#d4002a] font-semibold"
         >
           Clear Search
         </button>

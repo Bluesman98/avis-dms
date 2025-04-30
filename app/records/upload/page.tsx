@@ -3,7 +3,8 @@
 import React from 'react';
 import * as XLSX from 'xlsx';
 import { fetchCategory, createRecord as uploadCreateRecord } from './upload';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import ProtectedRoute from '../../components/ProtectedRoute';
+import classes from '../../components/CSS/Upload.module.css'
 
 function Upload() {
   const [files, setFiles] = React.useState<FileList | null>(null);
@@ -13,6 +14,7 @@ function Upload() {
   const [excessFiles, setExcessFiles] = React.useState<string[]>([]);
   const [allowUpload, setAllowUpload] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string>('');
+  const [duplicateFiles, setDuplicateFiles] = React.useState<string[]>([]);
   //const [uploadedRecords, setUploadedRecords] = React.useState<{ id: number; fileName: string }[]>([]);
 
   const handleMetadataInput = async (file: File) => {
@@ -95,6 +97,15 @@ function Upload() {
     for (const sheet of metaData) {
       for (const row of sheet) {
         const filePath = row['file_path'];
+
+        // Check if filePath is undefined or empty
+        if (!filePath || filePath.trim() === '') {
+          const errorMessage = `Row in sheet has an empty or undefined file_path.`;
+          setError((prevError) => `${prevError}\n${errorMessage}`);
+          console.error(errorMessage);
+          continue; // Skip this row
+        }
+
         const fileName = filePath.split('\\').pop();
         if (fileName) {
           sheetFileNames.add(fileName);
@@ -110,6 +121,7 @@ function Upload() {
             missingFilesList.push(fileName);
           }
         }
+
       }
     }
 
@@ -136,9 +148,10 @@ function Upload() {
     }
 
     if (duplicateFilesList.length > 0) {
-      setError(`Duplicate file paths found: ${duplicateFilesList.join(', ')}`);
+      setDuplicateFiles(duplicateFilesList); // Store duplicate files in a separate state
       console.error('Duplicate file paths: ', duplicateFilesList);
     } else {
+      setDuplicateFiles([]);
       console.log('No duplicate file paths.');
     }
 
@@ -156,6 +169,7 @@ function Upload() {
       const record = uploadedRecords.find((record) => record.fileName === file.name);
       if (!record) {
         console.error(`No record found for file: ${file.name}`);
+        setError(`No record found for file: ${file.name}`);
         continue;
       }
   
@@ -280,9 +294,9 @@ function Upload() {
 
   return (
     <ProtectedRoute reqRole={["admin"]}>
-      <div className="container">
-        <div className="upload">
-          <input
+      <div className={classes.container}>
+        <div className={classes.upload}>
+          <input className={classes.input}
             type="file"
             ref={(input) => {
               if (input) input.webkitdirectory = true;
@@ -301,32 +315,48 @@ function Upload() {
             </button>
           )}
         </div>
-        {error && (
-          <div className="error-files">
-            <h3>Error:</h3>
-            <p>{error}</p>
-          </div>
-        )}
-        {missingFiles.length > 0 && (
-          <div className="missing-files">
-            <h3>Missing Files:</h3>
-            <ul>
-              {missingFiles.map((file, index) => (
-                <li key={index}>{file}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {excessFiles.length > 0 && (
-          <div className="excess-files">
-            <h3>Excess Files:</h3>
-            <ul>
-              {excessFiles.map((file, index) => (
-                <li key={index}>{file}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <div className={classes.errorContainer}>
+          {error && (
+            <div className="error-files">
+              <h3>Error Files:</h3>
+              <ul>
+                {error.split('\n').map((err, index) => (
+                  err.length > 0 && <li key={index}>{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {duplicateFiles.length > 0 && (
+            <div className="duplicate-files">
+              <h3>Duplicate Files:</h3>
+              <ul>
+                {duplicateFiles.map((file, index) => (
+                  <li key={index}>{file}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {missingFiles.length > 0 && (
+            <div className="missing-files">
+              <h3>Missing Files:</h3>
+              <ul>
+                {missingFiles.map((file, index) => (
+                  <li key={index}>{file}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {excessFiles.length > 0 && (
+            <div className="excess-files">
+              <h3>Excess Files:</h3>
+              <ul>
+                {excessFiles.map((file, index) => (
+                  <li key={index}>{file}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );

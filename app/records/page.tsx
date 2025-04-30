@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { neon } from '@neondatabase/serverless';
-import Records from './Records';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import Records from '../components/Records';
+import ProtectedRoute from '../components/ProtectedRoute';
 
  /*async function fetchCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number) {
   'use server';
@@ -155,11 +155,7 @@ export default function RecordsPage() {
 
   return (
     <ProtectedRoute reqRole={["admin", "user"]}>
-      <div>
-        <h1>Records Page</h1>
-        <p>This is the records page.</p>
         <Records filterCategory={filterByCategory} fetchCategories={fetchCategories} simpleFilter={simpleFilter} advancedFilter={advancedFilter} fetchDisplayName={fetchDisplayName}/>
-      </div>
     </ProtectedRoute>
   );
 }
