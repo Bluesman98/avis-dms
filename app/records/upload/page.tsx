@@ -9,7 +9,7 @@ import classes from '../../components/CSS/Upload.module.css'
 function Upload() {
   const [files, setFiles] = React.useState<FileList | null>(null);
   const [metaData, setMetadata] = React.useState<Array<Record<string, string>[]>>([]);
-  const [sheetNames, setSheetNames] = React.useState<string[]>([]);
+  //const [sheetNames, setSheetNames] = React.useState<string[]>([]);
   const [missingFiles, setMissingFiles] = React.useState<string[]>([]);
   const [excessFiles, setExcessFiles] = React.useState<string[]>([]);
   const [allowUpload, setAllowUpload] = React.useState<boolean>(false);
@@ -22,15 +22,25 @@ function Upload() {
     const workbook = XLSX.read(data);
 
     console.log('Selected Workbook: ', workbook);
-    setSheetNames(workbook.SheetNames);
+    //setSheetNames(workbook.SheetNames);
     const temp = [];
+    const categories = new Set<string>(); // To store unique category names
 
     for (let i = 0; i < workbook.SheetNames.length; i++) {
-      temp.push(XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[i]]) as Record<string, string>[]);
+      const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[i]]) as Record<string, string>[];
+      temp.push(sheetData);
+
+      // Extract category names from the column "category_name"
+      sheetData.forEach((row) => {
+        if (row['category_name']) {
+          categories.add(row['category_name']);
+        }
+      });
     }
-    console.log('temp: ', temp);
-    //setMetadata(temp);
-    return temp
+
+    console.log('Extracted Categories: ', Array.from(categories));
+    setMetadata(temp);
+    return { metadata: temp, categories: Array.from(categories) };
   };
 
   /*const handleFileInput = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,7 +91,8 @@ function Upload() {
 
     let metaData: Record<string, string>[][] = [];
     if (excelFile) {
-      metaData = await handleMetadataInput(excelFile);
+      const result = await handleMetadataInput(excelFile);
+      metaData = result.metadata;
     }
 
     const fileNames = Array.from(targetFiles)
@@ -201,7 +212,7 @@ function Upload() {
     return value !== null && value !== undefined;
   }*/
 
-  async function categoryCheck(i: number) {
+  /*async function categoryCheck(i: number) {
     const sheet = sheetNames[i];
     if (!sheet) return null;
   
@@ -217,73 +228,102 @@ function Upload() {
     }
   
     return category[0];
-  }
+  }*/
 
   async function createData(metaData: Array<Record<string, string>[]>): Promise<{ id: number; fileName: string }[]> {
     console.group('Uploading Data');
   
     const newUploadedRecords: { id: number; fileName: string }[] = [];
+    const errors: string[] = []; // Collect errors
   
-    for (let i = 0; i < sheetNames.length; i++) {
-      try {
-        const category = await categoryCheck(i);
-        if (category) {
+    for (const sheet of metaData) {
+      for (const row of sheet) {
+        try {
+          const categoryName = row['category_name']; // Read category name from the column
+          if (!categoryName) {
+            const errorMessage = `Row is missing a category_name.`;
+            errors.push(errorMessage);
+            console.error(errorMessage);
+            continue; // Skip this row
+          }
+  
+          const category = await fetchCategory(categoryName);
+          if (!category || category.length === 0) {
+            const errorMessage = `Category "${categoryName}" does not exist in the database.`;
+            errors.push(errorMessage);
+            console.error(errorMessage);
+            continue; // Skip this row
+          }
+  
           const categoryFields = new Set(
-            Object.keys(category).filter(
-              (key) => typeof category[key] === 'boolean' && category[key] === true && key !== 'id' && key !== 'category_name'
+            Object.keys(category[0]).filter(
+              (key) =>
+                typeof category[0][key] === 'boolean' &&
+                category[0][key] === true &&
+                key !== 'id' &&
+                key !== 'category_name'
             )
           );
   
           console.log('Category fields:', categoryFields);
   
-          for (let j = 0; j < metaData[i].length; j++) {
-            const row = metaData[i][j];
+          // Validate that the row fields include all the category fields
+          const rowFields = Object.keys(row);
+          const missingFields = Array.from(categoryFields).filter((field) => !rowFields.includes(field));
+          
+          if (missingFields.length > 0) {
+            console.error(`Row is missing required fields: ${missingFields.join(', ')}`);
+            continue; // Skip this row if it is missing required fields
+          }
   
-            // Validate that the row fields match the category fields
-            const rowFields = Object.keys(row);
-            const invalidFields = rowFields.filter((field) => !categoryFields.has(field));
+          // Validate that the row fields match the category fields
+          /*const invalidFields = rowFields.filter((field) => !categoryFields.has(field));
   
-            if (invalidFields.length > 0) {
-              console.error(`Row contains invalid fields: ${invalidFields.join(', ')}`);
-              continue; // Skip this row if it contains invalid fields
+          if (invalidFields.length > 0) {
+            console.error(`Row contains invalid fields: ${invalidFields.join(', ')}`);
+            continue; // Skip this row if it contains invalid fields
+          }*/
+  
+          // Construct the record data dynamically
+          const recordData: Partial<Record<string, string>> = {};
+          categoryFields.forEach((field) => {
+            if (row[field] !== undefined) {
+              recordData[field] = row[field];
             }
+          });
   
-            // Construct the record data dynamically
-            const recordData: Partial<Record<string, string>> = {};
-            categoryFields.forEach((field) => {
-              if (row[field] !== undefined) {
-                recordData[field] = row[field];
-              }
-            });
+          // Proceed to create the record and get the record ID
+          const filteredRecordData = Object.fromEntries(
+            Object.entries(recordData).filter(([, value]) => value !== undefined)
+          ) as Record<string, string>;
+          const recordId = await uploadCreateRecord(Number(category[0].id), filteredRecordData);
   
-            // Proceed to create the record and get the record ID
-            const filteredRecordData = Object.fromEntries(
-              Object.entries(recordData).filter(([, value]) => value !== undefined)
-            ) as Record<string, string>;
-            const recordId = await uploadCreateRecord(Number(category.id), filteredRecordData);
-  
-            // Store the record ID and file name
-            if (row['file_path']) {
-              const filePath = row['file_path'];
-              const fileName = filePath.split('\\').pop();
-              if (fileName) {
-                newUploadedRecords.push({ id: recordId, fileName: fileName });
-              } else {
-                console.error('File name is undefined for file path:', filePath);
-              }
+          // Store the record ID and file name
+          if (row['file_path']) {
+            const filePath = row['file_path'];
+            const fileName = filePath.split('\\').pop();
+            if (fileName) {
+              newUploadedRecords.push({ id: recordId, fileName: fileName });
+            } else {
+              console.error('File name is undefined for file path:', filePath);
             }
+          }
   
-            console.log('Created record:', recordData);
+          console.log('Created record:', recordData);
+        } catch (error) {
+          if (error instanceof Error) {
+            console.error('Error creating data:', error.message);
+            errors.push(error.message);
+          } else {
+            console.error('Error creating data:', error);
           }
         }
-      } catch (error) {
-        if (error instanceof Error) {
-          console.error('Error creating data:', error.message);
-        } else {
-          console.error('Error creating data:', error);
-        }
-        break; // Stop processing further sheets if an error occurs
       }
+    }
+  
+    // Append errors to the error state
+    if (errors.length > 0) {
+      setError(errors.join('\n'));
     }
   
     console.log('Completed: ', metaData);
@@ -321,7 +361,7 @@ function Upload() {
               <h3>Error Files:</h3>
               <ul>
                 {error.split('\n').map((err, index) => (
-                  err.length > 0 && <li key={index}>{err}</li>
+                  <li key={index}>{err}</li>
                 ))}
               </ul>
             </div>

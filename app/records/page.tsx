@@ -45,7 +45,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
   const sql = neon(`${process.env.DATABASE_URL}`);
   // Fetch all categories from the database
   const response = await sql`SELECT * FROM categories`;
-  console.log(response);
+  //console.log(response);
 
   // Transform the data to the desired format
   const categories = response.map((row: any) => {
@@ -75,11 +75,11 @@ import ProtectedRoute from '../components/ProtectedRoute';
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
   // Fetch all categories from the database
-  const response = await sql`SELECT * FROM "FIELD DISPLAY NAMES" WHERE field_name = ${field_name}`;  
-  console.log(response);
+  const response = await sql`SELECT * FROM display_names WHERE field_name = ${field_name}`;  
+  //console.log(response);
 
   if (response.length === 0) {
-    console.log(`Field display name for ${field_name} not found`);
+    console.error(`Field display name for ${field_name} not found`);
     return null; // Field display name not found
   }
   // Transform the data to the desired format
@@ -93,7 +93,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
   if (!userRole?.includes('admin') && userPermissions) {
     const categoryPermissions = userPermissions[category_id.toString()];
     if (!categoryPermissions || !categoryPermissions.includes('read')) {
-      console.log(`User does not have 'read' permission for category ${category_id}`);
+      ///console.log(`User does not have 'read' permission for category ${category_id}`);
       return []; // Return an empty array if the user does not have permission
     }
   }
@@ -101,8 +101,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
   // Fetch records by category
-  const response = await sql`SELECT id, * FROM kilkis WHERE category_id = ${category_id}`;
-  console.log(response);
+  const response = await sql`SELECT id, * FROM records WHERE category_id = ${category_id}`;
+  //console.log(response);
   return response;
 }
 
@@ -112,7 +112,7 @@ async function simpleFilter(queryString: string, category_id: number, fields: st
   const sql = neon(`${process.env.DATABASE_URL}`);
 
   // Build the SQL query dynamically based on the provided fields
-  let query = `SELECT id, ${fields.map((field) => `"${field}"`).join(', ')} FROM kilkis WHERE category_id = $1 AND (`;
+  let query = `SELECT id, ${fields.map((field) => `"${field}"`).join(', ')} FROM records WHERE category_id = $1 AND (`;
   const params = [String(category_id)];
   fields.forEach((field, index) => {
     if (index > 0) query += ' OR ';
@@ -121,9 +121,9 @@ async function simpleFilter(queryString: string, category_id: number, fields: st
   });
   query += ')';
 
-  console.log('Query: ', query);
+  //console.log('Query: ', query);
   const response = await sql(query, params);
-  console.log(response);
+  //console.log(response);
   return response;
 }
 
@@ -133,7 +133,7 @@ async function advancedFilter(filters: { [key: string]: string }, category_id: n
   const sql = neon(`${process.env.DATABASE_URL}`);
 
   // Build the SQL query dynamically based on the provided filters
-  let query = `SELECT id, * FROM kilkis WHERE category_id = $1`;
+  let query = `SELECT id, * FROM records WHERE category_id = $1`;
   const params = [String(category_id)];
   let paramIndex = 2;
   for (const field in filters) {
@@ -144,9 +144,9 @@ async function advancedFilter(filters: { [key: string]: string }, category_id: n
     }
   }
 
-  console.log('Query: ', query);
+  //console.log('Query: ', query);
   const response = await sql(query, params);
-  console.log(response);
+  //console.log(response);
   return response;
 }
 

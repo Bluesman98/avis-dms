@@ -27,7 +27,7 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
     };
 
     fetchDisplayNames();
-  }, [fields, fetchDisplayName]);
+  }, []);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -76,10 +76,10 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
     setCurrentPage(pageNumber);
   };
 
-  console.log('Records Length:', records.length);
+  /*console.log('Records Length:', records.length);
   console.log('Records Per Page:', recordsPerPage);
   console.log('Total Pages:', totalPages);
-  console.log('Current Page:', currentPage);
+  console.log('Current Page:', currentPage);*/
 
   /*if (!fields.length) {
     return <div className="text-center">Please Select Category</div>;

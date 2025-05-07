@@ -54,7 +54,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     console.log('User: ', user);
     console.log('Roles: ', roles);
     console.log('Permissions: ', permissions);
-  }, [fetchCategories, permissions]);
+  }, []);
 
   return (
     <div className="">

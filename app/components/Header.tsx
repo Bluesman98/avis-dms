@@ -4,6 +4,7 @@ import { auth } from "../../lib/firebaseConfig";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import classes from './CSS/Header.module.css'
+import Image from "next/image";
 
 
 export default function Header() {
@@ -39,7 +40,7 @@ export default function Header() {
 
 <header className={classes.header}>
       <div className={classes.imgContainer}>
-        <img src="https://download.logo.wine/logo/Avis_Car_Rental/Avis_Car_Rental-Logo.wine.png" alt="Avis Logo" />
+        <Image width ={100} height={100} src="/Avis_Car_Rental-Logo.wine.png" alt="Avis Logo" />
       </div>
       {user && (
         <nav className={classes.nav}>

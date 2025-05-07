@@ -42,7 +42,7 @@ function Search({
     setSearchQuery('');
     setSearchQueries({});
     handleFilter(selectedCategory);
-  }, [selectedCategory, isAdvancedFilter]);
+  }, []);
 
   useEffect(() => {
     const fetchDisplayNames = async () => {
@@ -55,7 +55,7 @@ function Search({
     };
 
     fetchDisplayNames();
-  }, [selectedFields, fetchDisplayName]);
+  }, []);
 
   return (
     <div className="w-fit p-4">

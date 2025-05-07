@@ -26,11 +26,11 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
     const fileName = record.file_path.split('\\').pop(); // Get the last part of the path
     if (fileName) {
       handleRetrieve(`${record.id}_${fileName}`);
-      console.log('File name:', `${record.id_}_${fileName}`);
+      //console.log('File name:', `${record.id_}_${fileName}`);
     } else {
       console.error('File name could not be extracted from file path:', record.file_path);
     }
-  }, [record.id_, record.file_path]);
+  }, []);
 
   return (
     <tr>

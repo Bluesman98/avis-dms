@@ -28,7 +28,7 @@ export async function createRecord(
   // Dynamically construct the SQL query
   const fieldsString = fields.map((field) => `"${field}"`).join(', ');
   const placeholders = fields.map((_, index) => `$${index + 1}`).join(', ');
-  const query = `INSERT INTO kilkis (${fieldsString}) VALUES (${placeholders}) RETURNING id`;
+  const query = `INSERT INTO records (${fieldsString}) VALUES (${placeholders}) RETURNING id`;
 
   console.log('Fields:', fields);
   console.log('Values:', values);
