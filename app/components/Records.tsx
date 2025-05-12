@@ -66,7 +66,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
         handleFilter={handleFilter}
         fetchDisplayName={fetchDisplayName}
       />}
-      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName}/>
+      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} />
     </div>
   );
 }

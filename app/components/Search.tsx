@@ -20,6 +20,8 @@ function Search({
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdvancedFilter, setIsAdvancedFilter] = useState(false);
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [error, setError] = useState<string | null>(null); // Add error state
 
   const handleSearchQueryChange = (field: string, value: string) => {
     setSearchQueries(prev => ({ ...prev, [field]: value }));
@@ -28,6 +30,7 @@ function Search({
   const handleClearSearch = () => {
     setSearchQuery('');
     setSearchQueries({});
+    setError(null); // Clear errors
     handleFilter(selectedCategory); // Reset the filter to the default state
   };
 
@@ -46,28 +49,59 @@ function Search({
 
   useEffect(() => {
     const fetchDisplayNames = async () => {
+      setIsLoading(true); // Start loading
       const names: Record<string, string> = {};
       for (const field of selectedFields) {
         const displayName = await fetchDisplayName(field);
         names[field] = displayName || formatFieldName(field); // Fallback to formatted field name if no display name is found
       }
       setDisplayNames(names);
+      setIsLoading(false); // End loading
     };
 
     fetchDisplayNames();
-  }, []);
+  }, [selectedFields, fetchDisplayName]); // Add selectedFields and fetchDisplayName as dependencies
+
+  if (isLoading) {
+    return null; // Hide the component while loading
+  }
+
+  const validateSearch = () => {
+    if (!isAdvancedFilter) {
+      // Simple Search: Ensure the searchQuery is not empty
+      if (!searchQuery.trim()) {
+        setError('Search field is required for Simple Search.');
+        return false;
+      }
+    } else {
+      // Advanced Search: Ensure at least one field in searchQueries is not empty
+      const hasAtLeastOneField = Object.values(searchQueries).some(value => value.trim() !== '');
+      if (!hasAtLeastOneField) {
+        setError('At least one field is required for Advanced Search.');
+        return false;
+      }
+    }
+    setError(null); // Clear any previous errors
+    return true;
+  };
+
+  const handleSearchClick = () => {
+    if (validateSearch()) {
+      handleSearch(isAdvancedFilter, searchQueries, searchQuery, selectedCategory, selectedFields);
+    }
+  };
 
   return (
     <div className="w-fit p-4">
       <div className="flex justify-start items-center mb-4 gap-2">
         <button
-          onClick={() => setIsAdvancedFilter(false)}
+          onClick={() =>{ setIsAdvancedFilter(false); setError(null)}} // Clear errors when switching to Simple Filter
           className={`p-2 rounded-md font-semibold ${!isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Simple Filter
         </button>
         <button
-          onClick={() => setIsAdvancedFilter(true)}
+         onClick={() =>{ setIsAdvancedFilter(false); setError(null)}} // Clear errors when switching to Advanced Filter
           className={`p-2 rounded-md font-semibold ${isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Advanced Filter
@@ -76,7 +110,7 @@ function Search({
 
       {isAdvancedFilter ? (
         selectedFields.map(field => (
-          <div key={field} className="mb-2 ">
+          <div key={field} className="mb-2">
             <input
               type="text"
               placeholder={`Search by ${displayNames[field] || formatFieldName(field)}`}
@@ -98,9 +132,11 @@ function Search({
         </div>
       )}
 
+      {error && <div className="mb-2 text-white">{error}</div>} {/* Display error message */}
+
       <div className="flex justify-start items-center mt-4">
         <button
-          onClick={() => handleSearch(isAdvancedFilter, searchQueries, searchQuery, selectedCategory, selectedFields)}
+          onClick={handleSearchClick}
           className="mr-2 p-2 bg-[#d4002a] text-white rounded-md font-semibold"
         >
           Search
@@ -117,3 +153,4 @@ function Search({
 }
 
 export default Search;
+

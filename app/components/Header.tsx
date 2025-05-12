@@ -50,7 +50,7 @@ export default function Header() {
       </Link>
     
       <Link href="/records" legacyBehavior>
-        <a className="hover:underline">Records</a>
+        <a className="hover:underline">Search</a>
       </Link>
     
   

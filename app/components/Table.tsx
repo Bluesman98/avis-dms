@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from "react";
 import Record from "./Record";
+import { OrbitProgress } from "react-loading-indicators";
 
 function formatFieldName(fieldName: string): string {
   return fieldName
@@ -15,19 +16,24 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [recordsPerPage, setRecordsPerPage] = useState<number>(10); // Default to 10 records per page
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDisplayNames = async () => {
+      setIsLoading(true); // Start loading
       const names: Record<string, string> = {};
       for (const field of fields) {
         const displayName = await fetchDisplayName(field);
+        console.log("Display name for field:", field, "is", displayName);
         names[field] = displayName || formatFieldName(field); // Fallback to formatted field name if no display name is found
       }
       setDisplayNames(names);
+      setIsLoading(false); // End loading
     };
 
     fetchDisplayNames();
-  }, []);
+  }, [fields, fetchDisplayName]); // Add fields and fetchDisplayName as dependencies
+  
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -87,7 +93,11 @@ function Table({ records, fields, fetchDisplayName }: { records: any, fields: st
     return <div className="text-center">No records found</div>;
   }*/
 
-    if (!records.length) return null;
+  if (isLoading) {
+    return<div  className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
+  }
+
+  if (!records.length) return null;
 
   return (
     <div>

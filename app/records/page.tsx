@@ -83,6 +83,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
     return null; // Field display name not found
   }
   // Transform the data to the desired format
+  console.log("displayname :", response[0].display_name);
   return response[0].display_name;
 }
 
