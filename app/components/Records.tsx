@@ -56,6 +56,11 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     console.log('Permissions: ', permissions);
   }, []);
 
+  const clearData = () => {
+    setData([]);
+
+  }
+
   return (
     <div className="">
       <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} />
@@ -65,8 +70,9 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
         handleSearch={handleSearch}
         handleFilter={handleFilter}
         fetchDisplayName={fetchDisplayName}
+        clearData={clearData}
       />}
-      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} />
+      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} clearData={clearData}/>
     </div>
   );
 }

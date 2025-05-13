@@ -8,13 +8,15 @@ function Search({
   handleFilter,
   selectedCategory,
   selectedFields,
-  fetchDisplayName
+  fetchDisplayName,
+  clearData
 }: {
   handleSearch: any,
   handleFilter: any,
   selectedCategory: any,
   selectedFields: string[],
-  fetchDisplayName: (fieldName: string) => Promise<string | null>
+  fetchDisplayName: (fieldName: string) => Promise<string | null>,
+  clearData: any
 }) {
   const [searchQueries, setSearchQueries] = useState<{ [key: string]: string }>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,10 +30,12 @@ function Search({
   };
 
   const handleClearSearch = () => {
+
+    setError(null); // Clear errors
+    //handleFilter(selectedCategory); // Reset the filter to the default state
+    clearData(); // Clear the data in the parent component
     setSearchQuery('');
     setSearchQueries({});
-    setError(null); // Clear errors
-    handleFilter(selectedCategory); // Reset the filter to the default state
   };
 
   function formatFieldName(fieldName: string): string {
@@ -45,6 +49,7 @@ function Search({
     setSearchQuery('');
     setSearchQueries({});
     handleFilter(selectedCategory);
+    clearData(); // Clear the data in the parent component
   }, []);
 
   useEffect(() => {
@@ -101,7 +106,7 @@ function Search({
           Simple Filter
         </button>
         <button
-         onClick={() =>{ setIsAdvancedFilter(false); setError(null)}} // Clear errors when switching to Advanced Filter
+         onClick={() =>{ setIsAdvancedFilter(true); setError(null)}} // Clear errors when switching to Advanced Filter
           className={`p-2 rounded-md font-semibold ${isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Advanced Filter
