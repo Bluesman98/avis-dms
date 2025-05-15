@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
+
 import { useEffect, useState } from "react";
+import { OrbitProgress } from "react-loading-indicators";
 
 function Search({
   handleSearch,
@@ -32,7 +34,7 @@ function Search({
   const handleClearSearch = () => {
 
     setError(null); // Clear errors
-    //handleFilter(selectedCategory); // Reset the filter to the default state
+    handleFilter(selectedCategory); // Reset the filter to the default state
     clearData(); // Clear the data in the parent component
     setSearchQuery('');
     setSearchQueries({});
@@ -45,12 +47,12 @@ function Search({
       .join(' ');
   }
 
-  useEffect(() => {
+  /*useEffect(() => {
     setSearchQuery('');
     setSearchQueries({});
     handleFilter(selectedCategory);
     clearData(); // Clear the data in the parent component
-  }, []);
+  }, []);*/
 
   useEffect(() => {
     const fetchDisplayNames = async () => {
@@ -68,7 +70,7 @@ function Search({
   }, [selectedFields, fetchDisplayName]); // Add selectedFields and fetchDisplayName as dependencies
 
   if (isLoading) {
-    return null; // Hide the component while loading
+      return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
   }
 
   const validateSearch = () => {
@@ -94,6 +96,8 @@ function Search({
     if (validateSearch()) {
       handleSearch(isAdvancedFilter, searchQueries, searchQuery, selectedCategory, selectedFields);
     }
+    else clearData(); // Clear data if validation fails
+  // Clear data in the parent component
   };
 
   return (

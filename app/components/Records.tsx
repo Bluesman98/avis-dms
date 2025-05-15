@@ -6,6 +6,7 @@ import Dropdown from "./Dropdown";
 import Search from "./Search";
 import { bool } from "aws-sdk/clients/signer";
 import { useAuth } from "@/lib/AuthContext";
+import { OrbitProgress } from "react-loading-indicators";
 
 function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter,fetchDisplayName }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any, fetchDisplayName: any }) {
   const [data, setData] = useState<unknown[]>([]);
@@ -36,17 +37,12 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     }
   };
 
-  const { user, roles, permissions } = useAuth();
+  const { user, roles, permissions, loading } = useAuth();
 
   useEffect(() => {
+    if (loading) return; // Wait for auth to finish
     const fetchData = async () => {
       const temp = await fetchCategories(roles, permissions);
-     /* if (roles && roles.includes("admin")) setCategories(temp);
-      else {
-      const filteredCategories = temp.filter((category: { id: number }) => {
-        return permissions && permissions[category.id.toString()] && permissions[category.id.toString()].includes("read");
-      });
-      setCategories(filteredCategories);}*/
       setCategories(temp);
     };
     fetchData();
@@ -54,7 +50,11 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     console.log('User: ', user);
     console.log('Roles: ', roles);
     console.log('Permissions: ', permissions);
-  }, []);
+  }, [roles, permissions, loading]); // Add loading as a dependency
+
+  if (loading) {
+    return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
+  }
 
   const clearData = () => {
     setData([]);

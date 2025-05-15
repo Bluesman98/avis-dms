@@ -59,7 +59,7 @@ export default function SignIn() {
           />
           <button
             onClick={() => {
-              signUp(newEmail, newPassword, 'user', []);
+              signUp(newEmail, newPassword, 'user');
             }}
             className="w-full bg-[#d4002a] text-white py-2 rounded-md hover:bg-black transition"
           >

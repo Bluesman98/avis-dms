@@ -19,25 +19,20 @@ function Table({ records, fields, fetchDisplayName, clearData }: { records: any,
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setIsLoading(true); // <--- Ensure loading state is set immediately
+    clearData();        // <--- Clear data immediately on mount
     const fetchDisplayNames = async () => {
-      setIsLoading(true); // Start loading
       const names: Record<string, string> = {};
       for (const field of fields) {
         const displayName = await fetchDisplayName(field);
-        console.log("Display name for field:", field, "is", displayName);
-        names[field] = displayName || formatFieldName(field); // Fallback to formatted field name if no display name is found
+        names[field] = displayName || formatFieldName(field);
       }
       setDisplayNames(names);
-      setIsLoading(false); // End loading
+    
     };
-
     fetchDisplayNames();
-    clearData(); // Clear the data in the parent component
-  }, [fields, fetchDisplayName]); // Add fields and fetchDisplayName as dependencies
-
-  useEffect(() => {
-    clearData();
-  }, [])
+     setIsLoading(false); // End loading after fetching display names
+  }, [fields, fetchDisplayName]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -103,9 +98,9 @@ function Table({ records, fields, fetchDisplayName, clearData }: { records: any,
     return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
   }
 
-  if (!records.length) return <div className="text-center text-white">No data to display</div>;
+  else if (!records.length && !isLoading && !fields.length) return <div className="text-center text-white">No data to display</div>;
 
-  else if (!fields.length)
+  else if (records.length && fields.length && !isLoading) {
 
     return (
       <div>
@@ -215,6 +210,9 @@ function Table({ records, fields, fetchDisplayName, clearData }: { records: any,
         </div>
       </div>
     );
+
+}
+
 }
 
 export default Table;

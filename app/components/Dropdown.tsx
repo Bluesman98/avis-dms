@@ -6,9 +6,11 @@ import classes from './CSS/Dropdown.module.css'
 
 function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter: any, categories:any, selectedCategory:any }) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    function handleClick(category: { name: string }){
+    function handleClick(category: { name: string }) {
+      if (!selectedCategory || selectedCategory.name !== category.name) {
         handleFilter(category);
-        setIsDropdownOpen(false); // Close the dropdown after selecting a category
+      }
+      setIsDropdownOpen(false); // Always close the dropdown
     }
   return (
     <div className={classes.dropdown}>

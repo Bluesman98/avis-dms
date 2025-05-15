@@ -13,15 +13,15 @@ export const signIn = async (email: string, password: string) => {
     }
   };
 
-export const signUp  = async(email: string, password: string, role: string, permissions: string[])=>{
+export const signUp  = async(email: string, password: string, roles: string)=>{
   createUserWithEmailAndPassword(auth, email, password)
   .then(async (userCredential) => {
     // Signed up 
     const user = userCredential.user;
     await setDoc(doc(firestore, "users", user.uid), {
       email: user.email,
-      role: [role],
-      permissions: permissions, // Array of category IDs the user has access to
+      roles: [roles],
+
     });
     console.log("Signed up successfully");
     console.log("User:", user); 

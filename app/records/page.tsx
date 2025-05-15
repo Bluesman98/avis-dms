@@ -60,6 +60,8 @@ import ProtectedRoute from '../components/ProtectedRoute';
 
   // Filter categories based on user role and permissions
   if (!userRole?.includes('admin') && userPermissions) {
+    console.log("User is not an admin, filtering categories based on permissions");
+    console.log("User permissions: ", userPermissions);
     return categories.filter((category: { id: number }) => {
       const categoryPermissions = userPermissions[category.id.toString()];
       return categoryPermissions && categoryPermissions.includes('read');
@@ -155,7 +157,7 @@ export default function RecordsPage() {
  
 
   return (
-    <ProtectedRoute reqRole={["admin", "user"]}>
+    <ProtectedRoute reqRole={["admin","ltr","rac"]}>
         <Records filterCategory={filterByCategory} fetchCategories={fetchCategories} simpleFilter={simpleFilter} advancedFilter={advancedFilter} fetchDisplayName={fetchDisplayName}/>
     </ProtectedRoute>
   );
