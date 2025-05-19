@@ -10,30 +10,28 @@ export const signIn = async (email: string, password: string) => {
       window.location.href = "/"
     } catch (error) {
       console.error("Error signing in:", error);
+      throw new Error("Failed to sign in");
     }
   };
 
 export const signUp  = async(email: string, password: string, roles: string)=>{
-  createUserWithEmailAndPassword(auth, email, password)
-  .then(async (userCredential) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     // Signed up 
     const user = userCredential.user;
     await setDoc(doc(firestore, "users", user.uid), {
       email: user.email,
       roles: [roles],
-
     });
     console.log("Signed up successfully");
     console.log("User:", user); 
     await signIn(email, password);
-     window.location.href = "/"
+    window.location.href = "/";
     // ...
-  })
-  .catch((error) => {
-    const errorCode = error.code;
-    const errorMessage = error.message;
-    console.log("Error signing up:", errorMessage);
-    console.log("Error code:", errorCode);
+  } catch (error) {
+    console.error("Error signing up:", error);
+    throw new Error("Failed to sign up");
     // ..
-  })};
+  }
+}
 

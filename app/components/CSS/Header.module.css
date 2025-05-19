@@ -5,6 +5,7 @@
   max-height: 5rem;
   padding-right: 2rem;
 }
+
 .nav {
   display: flex;
   justify-content: flex-start;
@@ -45,6 +46,7 @@
   background-color: #d4002a !important;
   color: white !important;
 }
+
 .imgContainer {
   display: flex;
   align-items: center;
@@ -52,6 +54,7 @@
   background-color: white;
   max-height: 5rem;
 }
+
 
 .imgContainer img {
   max-height: 5rem;
