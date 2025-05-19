@@ -51,3 +51,13 @@
     background-color: black;
     color: white;
 }
+
+.selected{
+    color: black;
+    background-color: white;
+}
+
+.selected:hover{
+    color: black;
+    background-color: white;
+}

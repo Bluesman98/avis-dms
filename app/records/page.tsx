@@ -89,7 +89,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
   return response[0].display_name;
 }
 
- async function filterByCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number): Promise<{ [key: string]: string | number }[]> {
+ async function filterByCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number): Promise<boolean> {
   'use server';
 
   // Check if the user has 'read' permissions for the given category
@@ -97,16 +97,17 @@ import ProtectedRoute from '../components/ProtectedRoute';
     const categoryPermissions = userPermissions[category_id.toString()];
     if (!categoryPermissions || !categoryPermissions.includes('read')) {
       ///console.log(`User does not have 'read' permission for category ${category_id}`);
-      return []; // Return an empty array if the user does not have permission
+      return false; // Return an empty array if the user does not have permission
     }
   }
 
   // Connect to the Neon database
-  const sql = neon(`${process.env.DATABASE_URL}`);
+ // const sql = neon(`${process.env.DATABASE_URL}`);
   // Fetch records by category
-  const response = await sql`SELECT id, * FROM records WHERE category_id = ${category_id}`;
+  //const response = await sql`SELECT id, * FROM records WHERE category_id = ${category_id}`;
   //console.log(response);
-  return response;
+  //return response;
+  return true
 }
 
 async function simpleFilter(queryString: string, category_id: number, fields: string[]): Promise<{ [key: string]: string | number }[]> {

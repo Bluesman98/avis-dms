@@ -2,19 +2,31 @@
 'use client'
 
 import { Key, useState } from "react";
-import classes from './CSS/Dropdown.module.css'
+import classes from './CSS/Dropdown.module.css';
 
-function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter: any, categories:any, selectedCategory:any }) {
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    function handleClick(category: { name: string }) {
-      if (!selectedCategory || selectedCategory.name !== category.name) {
-        handleFilter(category);
-      }
-      setIsDropdownOpen(false); // Always close the dropdown
+function Dropdown({ handleFilter, categories, selectedCategory, clearData, isLoading }: { handleFilter: any, categories: any, selectedCategory: any, clearData: any, isLoading?: boolean }) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  function handleClick(category: { name: string }) {
+    if (!selectedCategory || selectedCategory.name !== category.name) {
+      handleFilter(category);
+      setIsDropdownOpen(false); // Only close if a new category is selected
+      clearData(); // Clear the data in the parent component
     }
+    // Do nothing if the category is already selected
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-4">
+        <span className="text-[#d4002a] font-semibold">Loading categories...</span>
+      </div>
+    );
+  }
+
   return (
     <div className={classes.dropdown}>
-              <button
+      <button
         id="dropdownDefaultButton"
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
         className={classes.dropdownButton}
@@ -29,11 +41,21 @@ function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter
 
       {isDropdownOpen && (
         <div id="dropdown-list" className={classes.dropdownList}>
-          <ul >
-            {categories.map((category: { name: any; }, index: Key | null | undefined) => (
-              <li className={classes.dropdownListItem} key={index}>
-                <a onClick={() => handleClick(category)} href="#" 
-                  data-tab-target="" role="tab" aria-selected="true">
+          <ul>
+            {categories.map((category: { name: any }, index: Key | null | undefined) => (
+              <li
+                key={index}
+                className={`${classes.dropdownListItem} ${classes.dropdownListItemLink} ${selectedCategory && selectedCategory.name === category.name ? classes.selected : ''}`}
+              >
+                <a
+                  onClick={() => handleClick(category)}
+                  href="#"
+                  data-tab-target=""
+                  role="tab"
+                  style={{
+                    pointerEvents: selectedCategory && selectedCategory.name === category.name ? 'none' : 'auto',
+                  }}
+                >
                   {category.name}
                 </a>
               </li>
@@ -41,7 +63,6 @@ function Dropdown({ handleFilter, categories, selectedCategory }: { handleFilter
           </ul>
         </div>
       )}
-
     </div>
   );
 }

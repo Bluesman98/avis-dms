@@ -11,14 +11,14 @@ function Search({
   selectedCategory,
   selectedFields,
   fetchDisplayName,
-  clearData
+  setSeachStatus
 }: {
   handleSearch: any,
   handleFilter: any,
   selectedCategory: any,
   selectedFields: string[],
   fetchDisplayName: (fieldName: string) => Promise<string | null>,
-  clearData: any
+  setSeachStatus: any
 }) {
   const [searchQueries, setSearchQueries] = useState<{ [key: string]: string }>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,12 +32,12 @@ function Search({
   };
 
   const handleClearSearch = () => {
-
     setError(null); // Clear errors
     handleFilter(selectedCategory); // Reset the filter to the default state
-    clearData(); // Clear the data in the parent component
     setSearchQuery('');
     setSearchQueries({});
+    setSeachStatus(false); // Reset search status
+  
   };
 
   function formatFieldName(fieldName: string): string {
@@ -55,19 +55,22 @@ function Search({
   }, []);*/
 
   useEffect(() => {
+    if (!selectedFields || selectedFields.length === 0) {
+      setIsLoading(false);
+      return;
+    }
     const fetchDisplayNames = async () => {
-      setIsLoading(true); // Start loading
+      setIsLoading(true);
       const names: Record<string, string> = {};
       for (const field of selectedFields) {
         const displayName = await fetchDisplayName(field);
-        names[field] = displayName || formatFieldName(field); // Fallback to formatted field name if no display name is found
+        names[field] = displayName || formatFieldName(field);
       }
       setDisplayNames(names);
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     };
-
     fetchDisplayNames();
-  }, [selectedFields, fetchDisplayName]); // Add selectedFields and fetchDisplayName as dependencies
+  }, [selectedFields, fetchDisplayName]);
 
   if (isLoading) {
       return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
@@ -95,9 +98,9 @@ function Search({
   const handleSearchClick = () => {
     if (validateSearch()) {
       handleSearch(isAdvancedFilter, searchQueries, searchQuery, selectedCategory, selectedFields);
+      setSeachStatus(true); // Set search status to true if validation passes
     }
-    else clearData(); // Clear data if validation fails
-  // Clear data in the parent component
+    else setSeachStatus(false); // Set search status to true if validation fails
   };
 
   return (

@@ -10,6 +10,7 @@ import { OrbitProgress } from "react-loading-indicators";
 
 function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter,fetchDisplayName }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any, fetchDisplayName: any }) {
   const [data, setData] = useState<unknown[]>([]);
+  const [showData, setShowData] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [categories, setCategories] = useState<{ id: number; name: string, fields: string[] }[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<{ name: string, fields: string[] } | null>(null);
@@ -17,10 +18,13 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
   const handleFilter = async (category: {
     id: number; name: string, fields: string[]
   }) => {
-    const filteredData = await filterCategory(roles, permissions,category.id);
-    setData(filteredData);
-    setSelectedFields(category.fields);
-    setSelectedCategory(category);
+    const acess = await filterCategory(roles, permissions,category.id);
+    if(acess){
+      setData([])
+      setSelectedFields(category.fields);
+      setSelectedCategory(category);
+    }
+    else throw new Error('You do not have permission to access this category');
   };
 
   const handleSearch = async (isAdvancedFilter: bool, searchQueries: Record<string, string>, searchQuery: string, selectedCategory: {
@@ -50,7 +54,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     console.log('User: ', user);
     console.log('Roles: ', roles);
     console.log('Permissions: ', permissions);
-  }, [roles, permissions, loading]); // Add loading as a dependency
+  }, [roles, permissions]); // Add loading as a dependency
 
   if (loading) {
     return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
@@ -58,21 +62,26 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
 
   const clearData = () => {
     setData([]);
-
+    setSelectedFields([]);
+    setSelectedCategory(null);
+    setShowData(false);
+  };
+  const setSearchStatus = (bool : boolean) => {
+    setShowData(bool);
   }
 
   return (
     <div className="">
-      <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} />
+      <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} clearData={clearData}/>
       {selectedCategory && <Search
         selectedCategory={selectedCategory}
         selectedFields={selectedFields}
         handleSearch={handleSearch}
         handleFilter={handleFilter}
         fetchDisplayName={fetchDisplayName}
-        clearData={clearData}
+        setSeachStatus={setSearchStatus}
       />}
-      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} clearData={clearData}/>
+      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} showData={showData}/>
     </div>
   );
 }

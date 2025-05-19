@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Record from "./Record";
 import { OrbitProgress } from "react-loading-indicators";
+import { bool } from "aws-sdk/clients/signer";
 
 function formatFieldName(fieldName: string): string {
   return fieldName
@@ -10,7 +11,7 @@ function formatFieldName(fieldName: string): string {
     .join(' ');
 }
 
-function Table({ records, fields, fetchDisplayName, clearData }: { records: any, fields: string[], fetchDisplayName: (fieldName: string) => Promise<string | null>, clearData: any }) {
+function Table({ records, fields, fetchDisplayName, showData}: { records: any, fields: string[], fetchDisplayName: (fieldName: string) => Promise<string | null>,  showData: bool }) {
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -20,7 +21,6 @@ function Table({ records, fields, fetchDisplayName, clearData }: { records: any,
 
   useEffect(() => {
     setIsLoading(true); // <--- Ensure loading state is set immediately
-    clearData();        // <--- Clear data immediately on mount
     const fetchDisplayNames = async () => {
       const names: Record<string, string> = {};
       for (const field of fields) {
@@ -98,9 +98,9 @@ function Table({ records, fields, fetchDisplayName, clearData }: { records: any,
     return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
   }
 
-  else if (!records.length && !isLoading && !fields.length) return <div className="text-center text-white">No data to display</div>;
 
-  else if (records.length && fields.length && !isLoading) {
+
+  else if (records.length && fields.length && !isLoading && showData) {
 
     return (
       <div>
@@ -212,6 +212,7 @@ function Table({ records, fields, fetchDisplayName, clearData }: { records: any,
     );
 
 }
+  else  return <div className="text-center text-white">No data to display</div>;
 
 }
 
