@@ -52,12 +52,9 @@
   align-items: center;
   justify-content: center;
   background-color: white;
-  max-height: 5rem;
-}
+  padding: .5rem 2rem;
+  width: fit-content;
 
-
-.imgContainer img {
-  max-height: 5rem;
 }
 
 .user {

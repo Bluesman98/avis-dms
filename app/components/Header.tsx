@@ -8,56 +8,63 @@ import Image from "next/image";
 
 
 export default function Header() {
+    const [user, setUser] = useState<User | null>(null);
+    const [roles, setRoles] = useState<string[] | null>(null);
 
-    const [user, setUser] = useState<User | null>(null)
+    const signOut = async () => {
+      auth.signOut().then(function() {
+        console.log('Signed Out');
+        setUser(null)
+        window.location.href = "/"
+      }, function(error) {
+        console.error('Sign Out Error', error);
+      });
+    };
 
-    const signOut = async () =>{auth.signOut().then(function() {
-      console.log('Signed Out');
-      setUser(null)
-     window.location.href = "/"
-    }, function(error) {
-      console.error('Sign Out Error', error);
-    });}
-
-    useEffect(()=>{
+    useEffect(() => {
         onAuthStateChanged(auth, (user) => {
             if (user) {
-              // User is signed in, see docs for a list of available properties
-              // https://firebase.google.com/docs/reference/js/firebase.User
-              const uid = user.uid;
-              // ...
-              setUser(user)
-              console.log("uid", uid)
+              setUser(user);
+              // Example: get roles from localStorage or your auth context
+              const userAttributes = localStorage.getItem('userAttributes');
+              if (userAttributes) {
+                try {
+                  const parsed = JSON.parse(userAttributes);
+                  setRoles(parsed.roles || null);
+                } catch {
+                  setRoles(null);
+                }
+              } else {
+                setRoles(null);
+              }
+              console.log("uid", user.uid)
             } else {
-              // User is signed out
-              // ...
+              setUser(null);
+              setRoles(null);
               console.log("user is logged out")
             }
-          });
-    }, [])
+        });
+    }, []);
 
     return(
 
 <header className={classes.header}>
       <div className={classes.imgContainer}>
-        <Image width ={100} height={100} src="/Avis_Car_Rental-Logo.wine.png" alt="Avis Logo" />
+        <Image width ={150} height={100} src="/avis-vector-logo.svg" alt="Avis Logo" />
       </div>
       {user && (
         <nav className={classes.nav}>
-    
-      <Link href="/" legacyBehavior>
-        <a className="hover:underline">Home</a>
-      </Link>
-    
-      <Link href="/records" legacyBehavior>
-        <a className="hover:underline">Search</a>
-      </Link>
-    
-  
-      <Link href="/records/upload" legacyBehavior>
-        <a className="hover:underline">Upload</a>
-      </Link>
-    
+          <Link href="/" legacyBehavior>
+            <a className="hover:underline">Home</a>
+          </Link>
+          <Link href="/records" legacyBehavior>
+            <a className="hover:underline">Search</a>
+          </Link>
+          {roles?.includes('admin') && (
+            <Link href="/records/upload" legacyBehavior>
+              <a className="hover:underline">Upload</a>
+            </Link>
+          )}
         </nav>
       )}
       {user && (
@@ -69,14 +76,15 @@ export default function Header() {
           }}>Sign Out</button>
         </div>
       )}
-{!user && (
+      {!user && (
         <nav className={classes.nav}>
-                <Link href="/" legacyBehavior>
-        <a className="hover:underline">Home</a>
-      </Link>
+          <Link href="/" legacyBehavior>
+            <a className="hover:underline">Home</a>
+          </Link>
           <Link href="/auth/signin" legacyBehavior>
             <a className="hover:underline">Sign In</a>
           </Link>
-          </nav>)}
+        </nav>
+      )}
     </header>)
 }

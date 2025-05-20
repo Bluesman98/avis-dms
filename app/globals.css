@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
-
 body {
   color: var(--foreground);
   background: var(--background);
@@ -94,22 +92,6 @@ main {
 
 .read-the-docs {
   color: #888;
-}
-
-.header-image-container {
-  background-color: white;
-  display: flex;
-  width: 100%;
-  margin-top: 5rem;
-  margin-bottom: 2rem;
-  padding: 0.3rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.header-image-container img {
-  width: 100%;
 }
 
 body {

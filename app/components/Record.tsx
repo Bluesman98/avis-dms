@@ -1,23 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 function Record({ record, fields }: { record: any, fields: string[] }) {
-  const [retrievedFileUrl, setRetrievedFileUrl] = useState<string | null>(null);
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   const handleRetrieve = async (fileName: string) => {
-    const response = await fetch('/api/get-file', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ fileName }),
-    });
-
-    const result = await response.json();
-    if (result.fileUrl) {
-      setRetrievedFileUrl(result.fileUrl);
+    setIsFetchingUrl(true);
+    try {
+      const response = await fetch('/api/get-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName }),
+      });
+      if (!response.ok) throw new Error('Failed to fetch file');
+      const blob = await response.blob();
+      const fileUrl = window.URL.createObjectURL(blob);
+      window.open(fileUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(fileUrl), 10000);
+    } catch (error) {
+      alert('Failed to fetch file URL.');
+      console.error('Error fetching file URL:', error);
+    } finally {
+      setIsFetchingUrl(false);
     }
   };
 
@@ -45,23 +51,28 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
     }
   };
 
-  useEffect(() => {
-    // Extract the file name from the file path
-    const fileName = record.file_path.split('\\').pop(); // Get the last part of the path
-    if (fileName) {
-      handleRetrieve(`${record.id}_${fileName}`);
-    } else {
-      console.error('File name could not be extracted from file path:', record.file_path);
-    }
-  }, []);
-
   return (
     <tr>
       {fields.map((field, index) => (
         <td key={index} className="p-4 border-t border-slate-200">{record[field]}</td>
       ))}
       <td className="p-4 border-t border-slate-200">
-        <a href={retrievedFileUrl || ''} target="_blank" rel="noopener noreferrer">View File</a>
+        <button
+          className="ml-2 px-2 py-1 bg-black text-white rounded"
+          onClick={async () => {
+            const fileName = record.file_path.split('\\').pop();
+            if (fileName) {
+              await handleRetrieve(`${record.id}_${fileName}`);
+
+            } else {
+              alert('File name could not be extracted.');
+            }
+          }}
+          type="button"
+          disabled={isFetchingUrl}
+        >
+          {isFetchingUrl ? 'Loading...' : 'View File'}
+        </button>
       </td>
       <td className="p-4 border-t border-slate-200">
         <button
