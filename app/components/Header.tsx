@@ -5,9 +5,10 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import classes from './CSS/Header.module.css'
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 
-export default function Header() {
+function Header() {
     const [user, setUser] = useState<User | null>(null);
     const [roles, setRoles] = useState<string[] | null>(null);
 
@@ -87,4 +88,11 @@ export default function Header() {
         </nav>
       )}
     </header>)
+}
+
+export default function HeaderWrapper() {
+  const pathname = usePathname();
+  const hideHeaderRoutes = ["/auth/force-password-reset"];
+  const showHeader = !hideHeaderRoutes.includes(pathname ?? "");
+  return showHeader ? <Header /> : null;
 }

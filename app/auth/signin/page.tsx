@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { useState } from 'react';
-import { signIn, signUp } from './auth';
+import { signIn, signUp, isPasswordExpired } from '../auth';
+import { useRouter } from 'next/navigation'; // <-- Use Next.js router
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -9,6 +10,53 @@ export default function SignIn() {
   const [newEmail, setNewmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter(); // <-- Use this instead of useNavigate
+
+  const handleLogin = async () => {
+    setError(null);
+    if (!email || !password) {
+      setError('Please enter both email and password.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    try {
+      const userCred = await signIn(email, password);
+      const expired = await isPasswordExpired(userCred.user.uid);
+      console.log("Password expired:", expired);
+      
+      if (expired) {
+        const response = await fetch('/api/set-password-expired', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expired: true }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to set password expired status');
+        }
+        
+        router.push("/auth/force-password-reset");
+      } else {
+        const response = await fetch('/api/set-password-expired', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expired: false }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to set password expired status');
+        }
+        
+        // This ensures the page fully reloads and picks up the new cookie
+        window.location.href = "/";
+      }
+    } catch (err: any) {
+      setError(err.message || "Login failed");
+    }
+  };
 
   // Helper to extract error message
   function getErrorMessage(err: any) {
@@ -49,22 +97,7 @@ export default function SignIn() {
             className="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            onClick={async () => {
-              setError(null);
-              if (!email || !password) {
-                setError('Please enter both email and password.');
-                return;
-              }
-              if (!isValidEmail(email)) {
-                setError('Please enter a valid email address.');
-                return;
-              }
-              try {
-                await signIn(email, password);
-              } catch (err: any) {
-                setError(getErrorMessage(err) || 'Failed to sign in.');
-              }
-            }}
+            onClick={handleLogin}
             className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
           >
             Sign In
