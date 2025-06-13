@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
+        console.log(user)
         setUser(user);
         const firestore = getFirestore();
         const userDoc = await getDoc(doc(firestore, 'users', user.uid));

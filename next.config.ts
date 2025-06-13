@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
     NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
   },
+  compiler: {
+    // Remove all console logs, excluding error logs
+    removeConsole: { exclude: ["error"] },
+  }
 };
 
 export default nextConfig;
