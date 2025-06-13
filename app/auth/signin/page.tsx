@@ -30,7 +30,7 @@ export default function SignIn() {
       const auth = getAuth();
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       localStorage.setItem('uid', userCred.user.uid);
-       localStorage.setItem('email', userCred.user.email ?? '');
+      localStorage.setItem('email', userCred.user.email ?? '');
 
       // Set a cookie for middleware authentication check
       document.cookie = "token=1; path=/";

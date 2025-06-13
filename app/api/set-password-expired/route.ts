@@ -1,3 +1,4 @@
+import admin from '@/lib/firebaseAdmin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
@@ -21,6 +22,11 @@ export async function POST(request: NextRequest) {
     });
     
     console.log("Cookie set in response");
+
+    const { uid } = await request.json();
+    console.log(`Revoking refresh tokens for user: ${uid}`);
+    await admin.auth().revokeRefreshTokens(uid);
+
     return response;
   } catch (error) {
     console.error('Error setting password expired cookie:', error);

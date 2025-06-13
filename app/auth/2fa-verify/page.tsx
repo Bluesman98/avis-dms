@@ -1,26 +1,29 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTwoFA } from '../../../lib/TwoFAContext';
 
 export default function TwoFAVerify() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [uid, setUid] = useState('');
-
-  useEffect(() => {
-    const storedUid = localStorage.getItem('uid');
-    if (storedUid) setUid(storedUid);
-  }, []);
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { setIsVerified } = useTwoFA();
 
   const handleVerify = async () => {
+    setLoading(true);
     setError(null);
+    const uid = localStorage.getItem('uid');
     const res = await fetch('/api/2fa/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid, token: code }),
     });
     const data = await res.json();
+    setLoading(false);
     if (data.success) {
-      window.location.href = '/';
+      setIsVerified(true);
+      router.push('/');
     } else {
       setError(data.error || 'Invalid code');
     }
@@ -39,9 +42,9 @@ export default function TwoFAVerify() {
         <button
           onClick={handleVerify}
           className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
-          disabled={!uid}
+          disabled={loading}
         >
-          Verify
+          {loading ? 'Verifying...' : 'Verify'}
         </button>
         {error && <div className="mt-4 text-red-600">{error}</div>}
       </div>

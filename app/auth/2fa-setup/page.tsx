@@ -50,7 +50,18 @@ export default function TwoFASetup() {
         {qr ? (
           <>
             <p className="mb-4">Scan this QR code with Google Authenticator, then enter the code below to complete setup.</p>
-            <Image src={qr} alt="Scan with Google Authenticator" className="mx-auto mb-4" />
+            <div className="w-full flex justify-center mb-4">
+              <div className="relative" style={{ width: '100%', maxWidth: 200, aspectRatio: '1 / 1' }}>
+              <Image
+                src={qr}
+                fill
+                alt="Scan with Google Authenticator"
+                className="object-contain rounded"
+                sizes="(max-width: 400px) 100vw, 200px"
+                priority
+              />
+              </div>
+            </div>
             <input
               value={code}
               onChange={e => setCode(e.target.value)}

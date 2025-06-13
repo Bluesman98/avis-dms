@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
+"use client";
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { auth } from './firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -14,7 +14,39 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const AUTO_LOGOUT_MINUTES = 30; // Set auto logout time in minutes
+
+export function useAutoLogout() {
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        auth.signOut();
+        // Optionally clear cookies/localStorage here
+        window.location.href = "/auth/signin";
+      }, AUTO_LOGOUT_MINUTES * 60 * 1000);
+    };
+
+    window.addEventListener("mousemove", resetTimer);
+    window.addEventListener("keydown", resetTimer);
+    window.addEventListener("click", resetTimer);
+
+    resetTimer();
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener("mousemove", resetTimer);
+      window.removeEventListener("keydown", resetTimer);
+      window.removeEventListener("click", resetTimer);
+    };
+  }, []);
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  useAutoLogout();
+
   const [user, setUser] = useState<any>(null);
   const [roles, setRoles] = useState<string[] | null>(null);
   const [permissions, setPermissions] = useState<Record<string, string[]> | null>(null);
@@ -24,45 +56,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {
-        console.log(user)
         setUser(user);
-        const firestore = getFirestore();
-        const userDoc = await getDoc(doc(firestore, 'users', user.uid));
-        if (userDoc.exists()) {
-          const userRoles = userDoc.data().roles || [];
-          setRoles(userRoles);
-          console.log('User roles:', userRoles);
+        try {
+          const firestore = getFirestore();
+          const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userRoles = userDoc.data().roles || [];
+            setRoles(userRoles);
 
-          // Fetch permissions for each role
-          const rolesCollection = collection(firestore, 'roles');
-          const rolesSnapshot = await getDocs(rolesCollection);
-          const rolesData = rolesSnapshot.docs.reduce((acc: any, doc: any) => {
-            acc[doc.id] = doc.data().permissions;
-            return acc;
-          }, {});
-          console.log('Roles data:', rolesData);
+            // Fetch permissions for each role
+            const rolesCollection = collection(firestore, 'roles');
+            const rolesSnapshot = await getDocs(rolesCollection);
+            const rolesData = rolesSnapshot.docs.reduce((acc: any, doc: any) => {
+              acc[doc.id] = doc.data().permissions;
+              return acc;
+            }, {});
 
-          const userPermissions = userRoles.reduce((acc: Record<string, string[]>, role: string) => {
-            if (rolesData[role]) {
-              for (const category in rolesData[role]) {
-                if (!acc[category]) {
-                  acc[category] = [];
+            const userPermissions = userRoles.reduce((acc: Record<string, string[]>, role: string) => {
+              if (rolesData[role]) {
+                for (const category in rolesData[role]) {
+                  if (!acc[category]) {
+                    acc[category] = [];
+                  }
+                  acc[category].push(...rolesData[role][category]);
                 }
-                acc[category].push(...rolesData[role][category]);
               }
+              return acc;
+            }, {});
+
+            // Remove duplicate permissions
+            for (const category in userPermissions) {
+              userPermissions[category] = [...new Set(userPermissions[category])];
             }
-            return acc;
-          }, {});
-          console.log('User permissions before deduplication:', userPermissions);
 
-          // Remove duplicate permissions
-          for (const category in userPermissions) {
-            userPermissions[category] = [...new Set(userPermissions[category])];
+            setPermissions(userPermissions);
+          } else {
+            setRoles(null);
+            setPermissions(null);
           }
-
-          setPermissions(userPermissions);
-          console.log('User permissions after deduplication:', userPermissions);
-        } else {
+        } catch {
           setRoles(null);
           setPermissions(null);
         }

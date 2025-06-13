@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
     secret = authenticator.generateSecret();
     await admin.firestore().collection('2fa_secrets').doc(uid).set({ secret, enabled: false });
   }
-  const otpauth = authenticator.keyuri(email, 'YourAppName', secret);
+  const host = request.headers.get('host') || 'localhost';
+  const otpauth = authenticator.keyuri(email, host, secret);
   const qr = await qrcode.toDataURL(otpauth);
   return NextResponse.json({ qr });
 }
