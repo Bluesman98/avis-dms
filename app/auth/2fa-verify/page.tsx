@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTwoFA } from '../../../lib/TwoFAContext';
+import { isPasswordExpired } from '../auth';
 
 export default function TwoFAVerify() {
   const [code, setCode] = useState('');
@@ -23,7 +24,42 @@ export default function TwoFAVerify() {
     setLoading(false);
     if (data.success) {
       setIsVerified(true);
-      router.push('/');
+      try {
+
+        // Check if the password is expired
+        if (!uid) {
+          throw new Error("User ID not found in localStorage");
+        }
+        const expired = await isPasswordExpired(uid);
+
+        console.log("Password expired:", expired);
+
+        // Set the password expired status via API (sets cookie server-side)
+        const response = await fetch('/api/set-password-expired', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expired, uid }), // <-- include uid here
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to set password expired status');
+        }
+
+        if (expired) {
+          router.push("/auth/force-password-reset");
+        } else {
+          // Ensure the page reloads and picks up the new cookie
+          window.location.href = "/";
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Login failed");
+        }
+      }
+
+      //router.push('/');
     } else {
       setError(data.error || 'Invalid code');
     }

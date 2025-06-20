@@ -4,7 +4,19 @@
 import { Key, useState } from "react";
 import classes from './CSS/Dropdown.module.css';
 
-function Dropdown({ handleFilter, categories, selectedCategory, clearData, isLoading }: { handleFilter: any, categories: any, selectedCategory: any, clearData: any, isLoading?: boolean }) {
+function Dropdown({
+  handleFilter,
+  categories,
+  selectedCategory,
+  clearData,
+  isLoading = false,
+}: {
+  handleFilter: any,
+  categories: any,
+  selectedCategory: any,
+  clearData: any,
+  isLoading?: boolean
+}) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   function handleClick(category: { name: string }) {
@@ -28,9 +40,11 @@ function Dropdown({ handleFilter, categories, selectedCategory, clearData, isLoa
     <div className={classes.dropdown}>
       <button
         id="dropdownDefaultButton"
-        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        onClick={() => !isLoading && setIsDropdownOpen(!isDropdownOpen)}
         className={classes.dropdownButton}
         type="button"
+        disabled={isLoading}
+        aria-disabled={isLoading}
       >
         Categories
         <svg className="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">

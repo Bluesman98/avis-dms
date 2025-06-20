@@ -8,6 +8,7 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const check2FAEnabled = async (uid: string) => {
@@ -26,6 +27,7 @@ export default function SignIn() {
       setError('Please enter both email and password.');
       return;
     }
+    setLoading(true);
     try {
       const auth = getAuth();
       const userCred = await signInWithEmailAndPassword(auth, email, password);
@@ -44,6 +46,7 @@ export default function SignIn() {
       }
     } catch (err: any) {
       setError(err.message || "Login failed");
+      setLoading(false);
     }
   };
 
@@ -65,6 +68,7 @@ export default function SignIn() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Email"
               className="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
             <input
               type="password"
@@ -72,13 +76,21 @@ export default function SignIn() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password"
               className="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
-            <button
+            {!loading && <button
               onClick={handleLogin}
               className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
+              disabled={loading}
             >
               Sign In
-            </button>
+
+            </button>}
+            {loading && (
+              <div className="mb-4 text-black-600 text-center font-semibold">
+                Checking 2FA...
+              </div>
+            )}
           </div>
         </div>
       </div>

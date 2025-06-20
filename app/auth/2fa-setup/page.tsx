@@ -1,29 +1,35 @@
 'use client';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { isPasswordExpired } from '../auth';
+import { useTwoFA } from '@/lib/TwoFAContext';
+import { useRouter } from 'next/navigation';
 
 export default function TwoFASetup() {
   const [qr, setQr] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [uid, setUid] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const { setIsVerified } = useTwoFA();
+  const router = useRouter();
+
 
   useEffect(() => {
     const storedUid = localStorage.getItem('uid');
     const storedEmail = localStorage.getItem('email');
-    if (storedUid) 
-    if (storedUid && storedEmail) {
-      setUid(storedUid);
+    if (storedUid)
+      if (storedUid && storedEmail) {
+        setUid(storedUid);
 
-      fetch('/api/2fa/setup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: storedUid, email: storedEmail }),
-      })
-        .then(res => res.json())
-        .then(data => setQr(data.qr))
-        .catch(() => setError('Failed to generate QR code'));
-    }
+        fetch('/api/2fa/setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: storedUid, email: storedEmail }),
+        })
+          .then(res => res.json())
+          .then(data => setQr(data.qr))
+          .catch(() => setError('Failed to generate QR code'));
+      }
   }, []);
 
   const handleVerify = async () => {
@@ -32,12 +38,39 @@ export default function TwoFASetup() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid, token: code }),
+      credentials: 'include', // ensure cookies are sent/received
     });
     const data = await res.json();
     if (data.success) {
-      // Optionally set a cookie to indicate 2FA secret is set up
-      document.cookie = "has_2fa_secret=true; path=/";
-      window.location.href = '/';
+      setIsVerified(true);
+      try {
+        // Check if the password is expired
+        const expired = await isPasswordExpired(uid);
+
+        // Set the password expired status via API (sets cookie server-side)
+        const response = await fetch('/api/set-password-expired', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expired, uid }),
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to set password expired status');
+        }
+
+        if (expired) {
+          router.push("/auth/force-password-reset");
+        } else {
+          router.push("/");
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Login failed");
+        }
+      }
     } else {
       setError(data.error || 'Invalid code');
     }
@@ -52,14 +85,14 @@ export default function TwoFASetup() {
             <p className="mb-4">Scan this QR code with Google Authenticator, then enter the code below to complete setup.</p>
             <div className="w-full flex justify-center mb-4">
               <div className="relative" style={{ width: '100%', maxWidth: 200, aspectRatio: '1 / 1' }}>
-              <Image
-                src={qr}
-                fill
-                alt="Scan with Google Authenticator"
-                className="object-contain rounded"
-                sizes="(max-width: 400px) 100vw, 200px"
-                priority
-              />
+                <Image
+                  src={qr}
+                  fill
+                  alt="Scan with Google Authenticator"
+                  className="object-contain rounded"
+                  sizes="(max-width: 400px) 100vw, 200px"
+                  priority
+                />
               </div>
             </div>
             <input

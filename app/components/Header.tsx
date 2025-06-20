@@ -2,50 +2,27 @@
 import Link from "next/link";
 import { auth } from "../../lib/firebaseConfig";
 import { useEffect, useState } from "react";
-import { onAuthStateChanged, User } from "firebase/auth";
 import classes from './CSS/Header.module.css'
 import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useTwoFA } from "../../lib/TwoFAContext";
+import { useAuth } from "@/lib/AuthContext";
 
 function Header() {
-  const [user, setUser] = useState<User | null>(null);
-  const [roles, setRoles] = useState<string[] | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const { isVerified } = useTwoFA();
   const { setIsVerified } = useTwoFA();
 
   useEffect(() => { setHydrated(true); }, []);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (user) {
-        const userAttributes = localStorage.getItem('userAttributes');
-        if (userAttributes) {
-          try {
-            const parsed = JSON.parse(userAttributes);
-            setRoles(parsed.roles || null);
-          } catch {
-            setRoles(null);
-          }
-        } else {
-          setRoles(null);
-        }
-      } else {
-        setRoles(null);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+  const { user, roles } = useAuth();
+
 
   if (!hydrated) return null;
 
   const signOut = async () => {
     // Sign out from Firebase
     await auth.signOut();
-    setUser(null);
-
     // Clear all localStorage
     localStorage.clear();
 
@@ -55,7 +32,7 @@ function Header() {
       credentials: 'include',
     });
 
-      setIsVerified(false);
+    setIsVerified(false);
 
     // Redirect to sign-in page
     window.location.href = "/auth/signin";
