@@ -66,7 +66,7 @@ function Header() {
       )}
       {(!user || !isVerified) && (
         <nav className={classes.nav}>
-          <Link href="/"><div>Home</div></Link>
+          <Link href="/home"><div>Home</div></Link>
           <Link href="/auth/signin"><div>Sign In</div></Link>
         </nav>
       )}

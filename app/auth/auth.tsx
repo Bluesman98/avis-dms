@@ -1,22 +1,22 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import {  createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, firestore } from "../../lib/firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { getAuth, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 
 export const signIn = async (email: string, password: string) => {
-    try {
-       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("Signed in successfully");
-      //window.location.href = "/"
-      return userCredential;
-    } catch (error) {
-      console.error("Error signing in:", error);
-      throw new Error("Failed to sign in");
-    }
-  };
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Signed in successfully");
+    //window.location.href = "/"
+    return userCredential;
+  } catch (error) {
+    console.error("Error signing in:", error);
+    throw new Error("Failed to sign in");
+  }
+};
 
-export const signUp  = async(email: string, password: string, roles: string)=>{
+export const signUp = async (email: string, password: string, roles: string) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     // Signed up 
@@ -27,7 +27,7 @@ export const signUp  = async(email: string, password: string, roles: string)=>{
       lastPasswordChange: Date.now()
     }, { merge: true });
     console.log("Signed up successfully");
-    console.log("User:", user); 
+    console.log("User:", user);
     await signIn(email, password);
     window.location.href = "/";
     // ...

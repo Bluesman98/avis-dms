@@ -8,7 +8,7 @@ import { bool } from "aws-sdk/clients/signer";
 import { useAuth } from "@/lib/AuthContext";
 import { OrbitProgress } from "react-loading-indicators";
 
-function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter,fetchDisplayName }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any, fetchDisplayName: any }) {
+function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter, fetchDisplayName }: { filterCategory: any, fetchCategories: any, simpleFilter: any, advancedFilter: any, fetchDisplayName: any }) {
   const [data, setData] = useState<unknown[]>([]);
   const [showData, setShowData] = useState(false);
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
@@ -18,8 +18,8 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
   const handleFilter = async (category: {
     id: number; name: string, fields: string[]
   }) => {
-    const acess = await filterCategory(roles, permissions,category.id);
-    if(acess){
+    const acess = await filterCategory(roles, permissions, category.id);
+    if (acess) {
       setData([])
       setSelectedFields(category.fields);
       setSelectedCategory(category);
@@ -66,13 +66,13 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     setSelectedCategory(null);
     setShowData(false);
   };
-  const setSearchStatus = (bool : boolean) => {
+  const setSearchStatus = (bool: boolean) => {
     setShowData(bool);
   }
 
   return (
     <div className="">
-      <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} clearData={clearData}/>
+      <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} clearData={clearData} />
       {selectedCategory && <Search
         selectedCategory={selectedCategory}
         selectedFields={selectedFields}
@@ -81,7 +81,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
         fetchDisplayName={fetchDisplayName}
         setSeachStatus={setSearchStatus}
       />}
-      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} showData={showData}/>
+      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} showData={showData} />
     </div>
   );
 }
