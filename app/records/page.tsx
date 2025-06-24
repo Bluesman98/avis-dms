@@ -4,50 +4,32 @@ import { neon } from '@neondatabase/serverless';
 import Records from '../components/Records';
 import ProtectedRoute from '../components/ProtectedRoute';
 
- /*async function fetchCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number) {
+// Utility: Allow-list for fields to prevent SQL injection via field names
+const ALLOWED_FIELDS = [
+  // Add your allowed field names here, e.g.:
+  "category_name",
+  "category_id",
+  "ar_kikloforias",
+  "imerominia_elegxou",
+  "ar_simvolaiou",
+  "ar_protokollou",
+  "ar_parartimatos",
+  "file_path",
+  "field_name",
+  "display_name",
+  "id",
+];
+
+// Validate that all fields are allowed
+function validateFields(fields: string[]): boolean {
+  return fields.every(field => ALLOWED_FIELDS.includes(field));
+}
+
+async function fetchCategories(userRole: string | null, userPermissions: Record<string, string[]> | null): Promise<{ id: any; name: any; fields: string[] }[]> {
   'use server';
-
-  // Check if the user is an admin or has permissions for the given category
-  if (!userRole?.includes('admin') && userPermissions) {
-    const categoryPermissions = userPermissions[category_id];
-    if (!categoryPermissions || !categoryPermissions.includes('read')) {
-      console.log(`User does not have permission to access category ${category_id}`);
-      return null; // User does not have permission to access this category
-    }
-  }
-
-  // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
-
-  // Fetch the category from the database using a parameterized query
-  const response = await sql`SELECT * FROM categories WHERE id = ${category_id}`;
-  if (response.length === 0) {
-    console.log(`Category with ID ${category_id} not found`);
-    return null; // Category not found
-  }
-
-  // Transform the data to the desired format
-  const row = response[0];
-  const { category_name, id, ...fields } = row;
-  const fieldNames = Object.keys(fields).filter(field => fields[field] === true);
-
-  return {
-    id: id,
-    name: category_name,
-    fields: fieldNames,
-  };
-}*/
-
- async function fetchCategories(userRole: string | null, userPermissions: Record<string, string[]> | null): Promise<{ id: any; name: any; fields: string[] }[]> {
-  'use server';
-
-  // Connect to the Neon database
-  const sql = neon(`${process.env.DATABASE_URL}`);
-  // Fetch all categories from the database
   const response = await sql`SELECT * FROM categories`;
-  //console.log(response);
 
-  // Transform the data to the desired format
   const categories = response.map((row: any) => {
     const { category_name, id, ...fields } = row;
     const fieldNames = Object.keys(fields).filter(field => fields[field] === true);
@@ -58,10 +40,7 @@ import ProtectedRoute from '../components/ProtectedRoute';
     };
   });
 
-  // Filter categories based on user role and permissions
   if (!userRole?.includes('admin') && userPermissions) {
-    console.log("User is not an admin, filtering categories based on permissions");
-    console.log("User permissions: ", userPermissions);
     return categories.filter((category: { id: number }) => {
       const categoryPermissions = userPermissions[category.id.toString()];
       return categoryPermissions && categoryPermissions.includes('read');
@@ -71,51 +50,38 @@ import ProtectedRoute from '../components/ProtectedRoute';
   return categories;
 }
 
- async function fetchDisplayName(field_name: string): Promise<string | null> {
+async function fetchDisplayName(field_name: string): Promise<string | null> {
   'use server';
-
-  // Connect to the Neon database
-  const sql = neon(`${process.env.DATABASE_URL}`);
-  // Fetch all categories from the database
-  const response = await sql`SELECT * FROM display_names WHERE field_name = ${field_name}`;  
-  //console.log(response);
-
-  if (response.length === 0) {
-    console.error(`Field display name for ${field_name} not found`);
-    return null; // Field display name not found
+  // Allow-list check for field_name
+  if (!ALLOWED_FIELDS.includes(field_name)) {
+    throw new Error("Invalid field name : " + field_name);
   }
-  // Transform the data to the desired format
-  console.log("displayname :", response[0].display_name);
+  const sql = neon(`${process.env.DATABASE_URL}`);
+  const response = await sql`SELECT * FROM display_names WHERE field_name = ${field_name}`;
+  if (response.length === 0) {
+    return null;
+  }
   return response[0].display_name;
 }
 
- async function filterByCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number): Promise<boolean> {
+async function filterByCategory(userRole: string | null, userPermissions: Record<string, string[]> | null, category_id: number): Promise<boolean> {
   'use server';
-
-  // Check if the user has 'read' permissions for the given category
   if (!userRole?.includes('admin') && userPermissions) {
     const categoryPermissions = userPermissions[category_id.toString()];
     if (!categoryPermissions || !categoryPermissions.includes('read')) {
-      ///console.log(`User does not have 'read' permission for category ${category_id}`);
-      return false; // Return an empty array if the user does not have permission
+      return false;
     }
   }
-
-  // Connect to the Neon database
- // const sql = neon(`${process.env.DATABASE_URL}`);
-  // Fetch records by category
-  //const response = await sql`SELECT id, * FROM records WHERE category_id = ${category_id}`;
-  //console.log(response);
-  //return response;
-  return true
+  return true;
 }
 
 async function simpleFilter(queryString: string, category_id: number, fields: string[]): Promise<{ [key: string]: string | number }[]> {
   'use server';
-  // Connect to the Neon database
+  // Validate fields to prevent SQL injection
+  if (!validateFields(fields)) {
+    throw new Error("Invalid field(s) in filter");
+  }
   const sql = neon(`${process.env.DATABASE_URL}`);
-
-  // Build the SQL query dynamically based on the provided fields
   let query = `SELECT id, ${fields.map((field) => `"${field}"`).join(', ')} FROM records WHERE category_id = $1 AND (`;
   const params = [String(category_id)];
   fields.forEach((field, index) => {
@@ -124,19 +90,17 @@ async function simpleFilter(queryString: string, category_id: number, fields: st
     params.push(`%${queryString}%`);
   });
   query += ')';
-
-  //console.log('Query: ', query);
   const response = await sql(query, params);
-  //console.log(response);
   return response;
 }
 
 async function advancedFilter(filters: { [key: string]: string }, category_id: number): Promise<{ [key: string]: string | number }[]> {
   'use server';
-  // Connect to the Neon database
+  // Validate fields to prevent SQL injection
+  if (!validateFields(Object.keys(filters))) {
+    throw new Error("Invalid field(s) in advanced filter");
+  }
   const sql = neon(`${process.env.DATABASE_URL}`);
-
-  // Build the SQL query dynamically based on the provided filters
   let query = `SELECT id, * FROM records WHERE category_id = $1`;
   const params = [String(category_id)];
   let paramIndex = 2;
@@ -147,19 +111,20 @@ async function advancedFilter(filters: { [key: string]: string }, category_id: n
       paramIndex++;
     }
   }
-
-  //console.log('Query: ', query);
   const response = await sql(query, params);
-  //console.log(response);
   return response;
 }
 
 export default function RecordsPage() {
- 
-
   return (
-    <ProtectedRoute reqRole={["admin","ltr","rac"]}>
-        <Records filterCategory={filterByCategory} fetchCategories={fetchCategories} simpleFilter={simpleFilter} advancedFilter={advancedFilter} fetchDisplayName={fetchDisplayName}/>
+    <ProtectedRoute reqRole={["admin", "ltr", "rac"]}>
+      <Records
+        filterCategory={filterByCategory}
+        fetchCategories={fetchCategories}
+        simpleFilter={simpleFilter}
+        advancedFilter={advancedFilter}
+        fetchDisplayName={fetchDisplayName}
+      />
     </ProtectedRoute>
   );
 }
