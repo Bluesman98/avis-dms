@@ -21,7 +21,8 @@ export default function SignIn() {
     return data.enabled;
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
     if (!email || !password) {
       setError('Please enter both email and password.');
@@ -61,7 +62,7 @@ export default function SignIn() {
         {/* Sign In Section */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Sign In</h1>
-          <div>
+          <form onSubmit={handleLogin}>
             <input
               type="email"
               value={email}
@@ -78,20 +79,14 @@ export default function SignIn() {
               className="w-full px-4 py-2 mb-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={loading}
             />
-            {!loading && <button
-              onClick={handleLogin}
+            <button
+              type="submit"
               className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
               disabled={loading}
             >
-              Sign In
-
-            </button>}
-            {loading && (
-              <div className="mb-4 text-black-600 text-center font-semibold">
-                Checking 2FA...
-              </div>
-            )}
-          </div>
+              {loading ? "Checking 2FA..." : "Sign In"}
+            </button>
+          </form>
         </div>
       </div>
     </div>

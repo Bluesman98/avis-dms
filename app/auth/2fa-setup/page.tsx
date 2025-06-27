@@ -7,47 +7,47 @@ import { useRouter } from 'next/navigation';
 
 export default function TwoFASetup() {
   const [qr, setQr] = useState<string | null>(null);
+  const [secret, setSecret] = useState<string | null>(null); // <-- Add this line
   const [code, setCode] = useState('');
   const [uid, setUid] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { setIsVerified } = useTwoFA();
   const router = useRouter();
 
-
   useEffect(() => {
     const storedUid = localStorage.getItem('uid');
     const storedEmail = localStorage.getItem('email');
-    if (storedUid)
-      if (storedUid && storedEmail) {
-        setUid(storedUid);
+    if (storedUid && storedEmail) {
+      setUid(storedUid);
 
-        fetch('/api/2fa/setup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: storedUid, email: storedEmail }),
+      fetch('/api/2fa/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: storedUid, email: storedEmail }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          setQr(data.qr);
+          setSecret(data.secret); // <-- Set the secret
         })
-          .then(res => res.json())
-          .then(data => setQr(data.qr))
-          .catch(() => setError('Failed to generate QR code'));
-      }
+        .catch(() => setError('Failed to generate QR code'));
+    }
   }, []);
 
-  const handleVerify = async () => {
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
     const res = await fetch('/api/2fa/verify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid, token: code }),
-      credentials: 'include', // ensure cookies are sent/received
+      credentials: 'include',
     });
     const data = await res.json();
     if (data.success) {
       setIsVerified(true);
       try {
-        // Check if the password is expired
         const expired = await isPasswordExpired(uid);
-
-        // Set the password expired status via API (sets cookie server-side)
         const response = await fetch('/api/set-password-expired', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -95,19 +95,28 @@ export default function TwoFASetup() {
                 />
               </div>
             </div>
-            <input
-              value={code}
-              onChange={e => setCode(e.target.value)}
-              placeholder="Enter 2FA code"
-              className="w-full px-4 py-2 mb-4 border rounded-md"
-            />
-            <button
-              onClick={handleVerify}
-              className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
-              disabled={!code}
-            >
-              Verify
-            </button>
+            {/* Display the secret as a failsafe */}
+            {secret && (
+              <div className="mb-4 text-center">
+                <span className="block text-gray-700 text-sm mb-1">Or enter this code manually:</span>
+                <span className="font-mono text-lg bg-gray-100 px-2 py-1 rounded">{secret}</span>
+              </div>
+            )}
+            <form onSubmit={handleVerify}>
+              <input
+                value={code}
+                onChange={e => setCode(e.target.value)}
+                placeholder="Enter 2FA code"
+                className="w-full px-4 py-2 mb-4 border rounded-md"
+              />
+              <button
+                type="submit"
+                className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
+                disabled={!code}
+              >
+                Verify
+              </button>
+            </form>
           </>
         ) : (
           <div>Loading QR code...</div>

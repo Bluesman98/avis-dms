@@ -9,6 +9,7 @@ export default function ForcePasswordReset() {
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [passwordChanged, setPasswordChanged] = useState(false);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   // Helper to reauthenticate user
@@ -20,14 +21,17 @@ export default function ForcePasswordReset() {
     await reauthenticateWithCredential(user, credential);
   };
 
-  const handleReset = async () => {
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError(null);
+    setLoading(true);
     try {
       const auth = getAuth();
       const user = auth.currentUser;
 
       if (!currentPassword || !newPassword) {
         setError("Both current and new passwords are required");
+        setLoading(false);
         return;
       }
 
@@ -64,6 +68,7 @@ export default function ForcePasswordReset() {
           : "Password reset failed"
       );
     }
+    setLoading(false);
   };
 
   return (
@@ -72,7 +77,7 @@ export default function ForcePasswordReset() {
         <h2 className="text-2xl font-bold text-center">Your password has expired</h2>
         <p className="text-center text-gray-600">Please set a new password to continue.</p>
 
-        <div className="space-y-4">
+        <form onSubmit={handleReset} className="space-y-4">
           <div>
             <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">Current Password</label>
             <input
@@ -100,10 +105,11 @@ export default function ForcePasswordReset() {
           </div>
 
           <button
-            onClick={handleReset}
+            type="submit"
             className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
+            disabled={loading}
           >
-            Change Password
+            {loading ? "Changing..." : "Change Password"}
           </button>
 
           {error &&
@@ -117,7 +123,7 @@ export default function ForcePasswordReset() {
               Password changed successfully! Redirecting...
             </div>
           }
-        </div>
+        </form>
       </div>
     </div>
   );

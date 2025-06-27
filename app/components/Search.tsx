@@ -37,7 +37,7 @@ function Search({
     setSearchQuery('');
     setSearchQueries({});
     setSeachStatus(false); // Reset search status
-  
+
   };
 
   function formatFieldName(fieldName: string): string {
@@ -73,7 +73,7 @@ function Search({
   }, [selectedFields, fetchDisplayName]);
 
   if (isLoading) {
-      return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
+    return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
   }
 
   const validateSearch = () => {
@@ -107,59 +107,68 @@ function Search({
     <div className="w-fit p-4">
       <div className="flex justify-start items-center mb-4 gap-2">
         <button
-          onClick={() =>{ setIsAdvancedFilter(false); setError(null)}} // Clear errors when switching to Simple Filter
+          onClick={() => { setIsAdvancedFilter(false); setError(null) }} // Clear errors when switching to Simple Filter
           className={`p-2 rounded-md font-semibold ${!isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Simple Filter
         </button>
         <button
-         onClick={() =>{ setIsAdvancedFilter(true); setError(null)}} // Clear errors when switching to Advanced Filter
+          onClick={() => { setIsAdvancedFilter(true); setError(null) }} // Clear errors when switching to Advanced Filter
           className={`p-2 rounded-md font-semibold ${isAdvancedFilter ? 'bg-white text-[#d4002a] font-semibold' : 'bg-[#d4002a] text-white'}`}
         >
           Advanced Filter
         </button>
       </div>
 
-      {isAdvancedFilter ? (
-        selectedFields.map(field => (
-          <div key={field} className="mb-2">
+      <form
+        onSubmit={e => {
+          e.preventDefault();
+          handleSearchClick();
+        }}
+        className="flex flex-col gap-2 mt-4"
+      >
+        {isAdvancedFilter ? (
+          selectedFields.map(field => (
+            <div key={field} className="mb-2">
+              <input
+                type="text"
+                placeholder={`Search by ${displayNames[field] || formatFieldName(field)}`}
+                value={searchQueries[field] || ''}
+                onChange={(e) => handleSearchQueryChange(field, e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md text-black"
+              />
+            </div>
+          ))
+        ) : (
+          <div className="mb-2">
             <input
               type="text"
-              placeholder={`Search by ${displayNames[field] || formatFieldName(field)}`}
-              value={searchQueries[field] || ''}
-              onChange={(e) => handleSearchQueryChange(field, e.target.value)}
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md text-black"
             />
           </div>
-        ))
-      ) : (
-        <div className="mb-2">
-          <input
-            type="text"
-            placeholder="Search..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md text-black"
-          />
+        )}
+
+        {error && <div className="mb-2 text-white">{error}</div>}
+
+        <div className="flex justify-start items-center gap-2">
+          <button
+            type="submit"
+            className="p-2 bg-[#d4002a] text-white rounded-md font-semibold"
+          >
+            Search
+          </button>
+          <button
+            type="button"
+            onClick={handleClearSearch}
+            className="bg-white text-[#d4002a] font-semibold"
+          >
+            Clear Search
+          </button>
         </div>
-      )}
-
-      {error && <div className="mb-2 text-white">{error}</div>} {/* Display error message */}
-
-      <div className="flex justify-start items-center mt-4">
-        <button
-          onClick={handleSearchClick}
-          className="mr-2 p-2 bg-[#d4002a] text-white rounded-md font-semibold"
-        >
-          Search
-        </button>
-        <button
-          onClick={handleClearSearch}
-          className="bg-white text-[#d4002a] font-semibold"
-        >
-          Clear Search
-        </button>
-      </div>
+      </form>
     </div>
   );
 }

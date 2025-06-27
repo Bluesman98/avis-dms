@@ -11,7 +11,8 @@ export default function TwoFAVerify() {
   const router = useRouter();
   const { setIsVerified } = useTwoFA();
 
-  const handleVerify = async () => {
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
     const uid = localStorage.getItem('uid');
@@ -25,20 +26,15 @@ export default function TwoFAVerify() {
     if (data.success) {
       setIsVerified(true);
       try {
-
-        // Check if the password is expired
         if (!uid) {
           throw new Error("User ID not found in localStorage");
         }
         const expired = await isPasswordExpired(uid);
 
-        console.log("Password expired:", expired);
-
-        // Set the password expired status via API (sets cookie server-side)
         const response = await fetch('/api/set-password-expired', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expired, uid }), // <-- include uid here
+          body: JSON.stringify({ expired, uid }),
         });
 
         if (!response.ok) {
@@ -48,7 +44,6 @@ export default function TwoFAVerify() {
         if (expired) {
           router.push("/auth/force-password-reset");
         } else {
-          // Ensure the page reloads and picks up the new cookie
           window.location.href = "/";
         }
       } catch (err: unknown) {
@@ -58,8 +53,6 @@ export default function TwoFAVerify() {
           setError("Login failed");
         }
       }
-
-      //router.push('/');
     } else {
       setError(data.error || 'Invalid code');
     }
@@ -69,19 +62,21 @@ export default function TwoFAVerify() {
     <div className="flex items-center justify-center mt-8">
       <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">
         <h1 className="text-2xl font-bold mb-4">2FA Verification</h1>
-        <input
-          value={code}
-          onChange={e => setCode(e.target.value)}
-          placeholder="Enter 2FA code"
-          className="w-full px-4 py-2 mb-4 border rounded-md"
-        />
-        <button
-          onClick={handleVerify}
-          className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
-          disabled={loading}
-        >
-          {loading ? 'Verifying...' : 'Verify'}
-        </button>
+        <form onSubmit={handleVerify}>
+          <input
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="Enter 2FA code"
+            className="w-full px-4 py-2 mb-4 border rounded-md"
+          />
+          <button
+            type="submit"
+            className="w-full bg-black text-white py-2 rounded-md hover:bg-[#d4002a] transition"
+            disabled={loading}
+          >
+            {loading ? 'Verifying...' : 'Verify'}
+          </button>
+        </form>
         {error && <div className="mt-4 text-red-600">{error}</div>}
       </div>
     </div>

@@ -3,6 +3,7 @@
 
 import { Key, useState } from "react";
 import classes from './CSS/Dropdown.module.css';
+import { OrbitProgress } from "react-loading-indicators";
 
 function Dropdown({
   handleFilter,
@@ -28,12 +29,9 @@ function Dropdown({
     // Do nothing if the category is already selected
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-4">
-        <span className="text-[#d4002a] font-semibold">Loading categories...</span>
-      </div>
-    );
+  if (categories.length === 0) {
+    return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;
+
   }
 
   return (
