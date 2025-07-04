@@ -27,14 +27,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <AuthProvider>
-        <TwoFAProvider>
+      <TwoFAProvider>
+        <AuthProvider>
           <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
             <HeaderWrapper />
             <main className="container mx-auto p-4">{children}</main>
           </body>
-        </TwoFAProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </TwoFAProvider>
     </html>
   );
 }

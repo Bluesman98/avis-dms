@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function ForcePasswordReset() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState(""); // Add repeat password state
   const [error, setError] = useState<string | null>(null);
   const [passwordChanged, setPasswordChanged] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,8 +30,14 @@ export default function ForcePasswordReset() {
       const auth = getAuth();
       const user = auth.currentUser;
 
-      if (!currentPassword || !newPassword) {
-        setError("Both current and new passwords are required");
+      if (!currentPassword || !newPassword || !repeatPassword) {
+        setError("All password fields are required");
+        setLoading(false);
+        return;
+      }
+
+      if (newPassword !== repeatPassword) {
+        setError("New passwords do not match");
         setLoading(false);
         return;
       }
@@ -100,6 +107,19 @@ export default function ForcePasswordReset() {
               onChange={e => setNewPassword(e.target.value)}
               className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter your new password"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="repeatPassword" className="block text-sm font-medium text-gray-700">Repeat New Password</label>
+            <input
+              id="repeatPassword"
+              type="password"
+              value={repeatPassword}
+              onChange={e => setRepeatPassword(e.target.value)}
+              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Repeat your new password"
               required
             />
           </div>

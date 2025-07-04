@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import admin from "@/lib/firebaseAdmin";
+import { getFirestore } from "@/lib/firebaseAdmin";
 import { authenticator } from "otplib";
 
 export async function POST(request: NextRequest) {
   const { uid, token } = await request.json();
-  const docRef = admin.firestore().collection("2fa_secrets").doc(uid);
+  const docRef = getFirestore().collection("2fa_secrets").doc(uid);
   const doc = await docRef.get();
   if (!doc.exists || !doc.data()?.secret) {
     return NextResponse.json(

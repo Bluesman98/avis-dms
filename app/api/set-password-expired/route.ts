@@ -1,4 +1,4 @@
-import admin from "@/lib/firebaseAdmin";
+import { getAuth } from "@/lib/firebaseAdmin";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     if (uid && expired) {
       console.log(`Revoking refresh tokens for user: ${uid}`);
-      await admin.auth().revokeRefreshTokens(uid);
+      await getAuth().revokeRefreshTokens(uid);
     }
 
     return response;

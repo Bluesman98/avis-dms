@@ -3,16 +3,25 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { isPasswordExpired } from '../auth';
 import { useTwoFA } from '@/lib/TwoFAContext';
+import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function TwoFASetup() {
   const [qr, setQr] = useState<string | null>(null);
-  const [secret, setSecret] = useState<string | null>(null); // <-- Add this line
+  const [secret, setSecret] = useState<string | null>(null);
   const [code, setCode] = useState('');
   const [uid, setUid] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const { setIsVerified } = useTwoFA();
+  const { isVerified, setIsVerified } = useTwoFA();
+  const { user } = useAuth();
   const router = useRouter();
+
+  // Block access if user is logged in and 2FA is already verified
+  useEffect(() => {
+    if (user && isVerified) {
+      router.replace('/');
+    }
+  }, [user, isVerified, router]);
 
   useEffect(() => {
     const storedUid = localStorage.getItem('uid');
@@ -28,7 +37,7 @@ export default function TwoFASetup() {
         .then(res => res.json())
         .then(data => {
           setQr(data.qr);
-          setSecret(data.secret); // <-- Set the secret
+          setSecret(data.secret);
         })
         .catch(() => setError('Failed to generate QR code'));
     }
@@ -75,6 +84,11 @@ export default function TwoFASetup() {
       setError(data.error || 'Invalid code');
     }
   };
+
+  // Optionally, show nothing while redirecting
+  if (user && isVerified) {
+    return null;
+  }
 
   return (
     <div className="flex items-center justify-center mt-8">

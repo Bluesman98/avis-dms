@@ -1,31 +1,34 @@
 'use server'
 import { neon } from '@neondatabase/serverless';
 
+const ALLOWED_FIELDS = [
+  "category_id",
+  "ar_kikloforias",
+  "imerominia_elegxou",
+  "ar_simvolaiou",
+  "ar_protokollou",
+  "ar_parartimatos",
+  "file_path",
+  "id",
+];
+
 export async function createRecord(
-  categoryId: number,
-  recordData: Partial<{
-    folderName: string;
-    subFolderName: string;
-    range: string;
-    fileName: string;
-    filePath: string;
-    area: string;
-    year: string;
-    protocolNo: string;
-    buildingBlock: string;
-    aproovalNo: string;
-    subCategory: string;
-  }>
+  recordData: Partial<Record<string, string | number>>
 ): Promise<number> {
   'use server';
-  // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);
 
-  // Dynamically construct the fields and values for the SQL query
-  const fields = ['category_id', ...Object.keys(recordData)];
-  const values = [categoryId, ...Object.values(recordData)];
+  // Filter only allowed fields
+  const filteredEntries = Object.entries(recordData).filter(([key]) =>
+    ALLOWED_FIELDS.includes(key)
+  );
+  const fields = filteredEntries.map(([key]) => key);
+  const values = filteredEntries.map(([, value]) => value);
 
-  // Dynamically construct the SQL query
+  if (fields.length === 0) {
+    throw new Error("No valid fields to insert");
+  }
+
   const fieldsString = fields.map((field) => `"${field}"`).join(', ');
   const placeholders = fields.map((_, index) => `$${index + 1}`).join(', ');
   const query = `INSERT INTO records (${fieldsString}) VALUES (${placeholders}) RETURNING id`;
@@ -33,7 +36,6 @@ export async function createRecord(
   console.log('Fields:', fields);
   console.log('Values:', values);
 
-  // Execute the query and return the inserted ID
   const result = await sql(query, values);
   const insertedId = result[0]?.id;
 
@@ -62,7 +64,7 @@ export async function createCategory(
   return response
 }
 
-export async function fetchCategory(category :string): Promise<{ [key: string]: string | number }[]> {
+export async function fetchCategory(category: string): Promise<{ [key: string]: string | number }[]> {
   'use server'
   // Connect to the Neon database
   const sql = neon(`${process.env.DATABASE_URL}`);

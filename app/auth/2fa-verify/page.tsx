@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTwoFA } from '../../../lib/TwoFAContext';
+import { useAuth } from '@/lib/AuthContext';
 import { isPasswordExpired } from '../auth';
 
 export default function TwoFAVerify() {
@@ -9,7 +10,15 @@ export default function TwoFAVerify() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { setIsVerified } = useTwoFA();
+  const { setIsVerified, isVerified } = useTwoFA();
+  const { user } = useAuth();
+
+  // Redirect if user is logged in and already verified
+  useEffect(() => {
+    if (user && isVerified) {
+      router.replace('/');
+    }
+  }, [user, isVerified, router]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +66,11 @@ export default function TwoFAVerify() {
       setError(data.error || 'Invalid code');
     }
   };
+
+  // Optionally, show nothing while redirecting
+  if (user && isVerified) {
+    return null;
+  }
 
   return (
     <div className="flex items-center justify-center mt-8">
