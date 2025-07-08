@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
       "style-src 'self' 'unsafe-inline';",
       "img-src 'self' data:;",
       "font-src 'self' https://fonts.gstatic.com data:;",
-      "connect-src 'self' https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com;",
+      "connect-src 'self' https://avis-dms-bucket.s3.eu-central-1.amazonaws.com https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com;", // <-- S3 bucket added here
       "object-src 'none';",
       "frame-ancestors 'none';",
       "base-uri 'self';",

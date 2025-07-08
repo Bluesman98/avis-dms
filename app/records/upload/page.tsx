@@ -14,7 +14,7 @@ function Upload() {
   const [, setError] = React.useState("");
   const [isUploading, setIsUploading] = React.useState(false);
   const [isPreparingFiles, setIsPreparingFiles] = React.useState(false);
-  const [uploadProgress, setUploadProgress] = React.useState<{ current: number; total: number }>({ current: 0, total: 0 });
+  const [uploadProgress, setUploadProgress] = React.useState<{ current: number; total: number }>({ current: 0, total: 10 });
   const [uploadCompleted, setUploadCompleted] = React.useState(false);
   const [errorFiles, setErrorFiles] = React.useState<string[]>([]);
   const [duplicateFiles, setDuplicateFiles] = React.useState<string[]>([]);
@@ -121,67 +121,105 @@ function Upload() {
     setError("");
     setUploadProgress({ current: 0, total: 0 });
 
+    // Get Firebase ID token if needed
     const auth = getAuth();
     const user = auth.currentUser;
-    if (!user) {
-      setError("User not authenticated.");
-      setIsPreparingFiles(false);
-      return;
-    }
-    const idToken = await user.getIdToken();
+    const idToken = user ? await user.getIdToken() : undefined;
 
-    // Prepare files: read all as base64 except Excel
     const uploadableFiles = Array.from(files).filter(
       file => !file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')
     );
 
     setUploadProgress({ current: 0, total: uploadableFiles.length });
 
-    // Read files one by one to avoid memory overflow
-    const filesWithBase64: { name: string; data: string }[] = [];
-    for (let i = 0; i < uploadableFiles.length; i++) {
-      const file = uploadableFiles[i];
-      // eslint-disable-next-line no-await-in-loop
-      const base64File = await new Promise<{ name: string; data: string }>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onloadend = () => {
-          const base64 = reader.result?.toString().split(',')[1];
-          if (!base64) {
-            reject(new Error(`Could not read file data for ${file.name}`));
+    let uploadedCount = 0;
+    let anyError = false;
+
+    // Parallel uploads (limit concurrency)
+    const CONCURRENCY = 4;
+    const queue = [...uploadableFiles];
+    const uploadNext = async () => {
+      const file = queue.shift();
+      if (!file) return;
+      try {
+        // 1. Create DB record to get _id
+        const dbRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            metaData,
+            files: [{
+              name: file.name,
+              // Optionally: meta: findMetaForFile(metaData, file.name),
+            }],
+            idToken,
+          }),
+        });
+        const dbResult = await dbRes.json();
+        if (!dbRes.ok || !dbResult.records || !dbResult.records[0]?.id) {
+          throw new Error(`Failed to create DB record for ${file.name}`);
+        }
+        const recordId = dbResult.records[0].id;
+
+        // 2. Get pre-signed URL with _id in the filename
+        const s3FileName = `${recordId}_${file.name}`;
+        const presignRes = await fetch("/api/presign-upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileName: s3FileName,
+            fileType: file.type || "application/octet-stream",
+          }),
+        });
+        const { url } = await presignRes.json();
+        if (!url) throw new Error("Failed to get presigned URL");
+
+        // 3. Upload file directly to S3
+        const uploadRes = await fetch(url, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name} to S3`);
+
+        // 4. Optionally, update DB record with S3 URL
+        await fetch("/api/upload", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: recordId,
+            s3Url: url.split("?")[0], // S3 object URL without query params
+            idToken,
+          }),
+        });
+
+      } catch (err: unknown) {
+        setError(prev => {
+          let errorMsg = '';
+          if (err instanceof Error) {
+            errorMsg = err.message;
+          } else if (typeof err === 'string') {
+            errorMsg = err;
           } else {
-            resolve({ name: file.name, data: base64 });
+            errorMsg = JSON.stringify(err);
           }
-        };
-        reader.onerror = reject;
-      });
-      filesWithBase64.push(base64File);
-      setUploadProgress({ current: i + 1, total: uploadableFiles.length });
-    }
+          return prev + `\n${file.name}: ${errorMsg}`;
+        });
+        anyError = true;
+      }
+      uploadedCount += 1;
+      setUploadProgress({ current: uploadedCount, total: uploadableFiles.length });
+      await uploadNext();
+    };
 
     setIsPreparingFiles(false);
     setIsUploading(true);
 
-    // Send all data in one request (API expects all files at once)
-    const response = await fetch("/api/upload", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        metaData,
-        files: filesWithBase64,
-        idToken,
-      }),
-    });
-    const result = await response.json();
+    await Promise.all(Array(CONCURRENCY).fill(0).map(uploadNext));
 
     setIsUploading(false);
 
-    if (result.error || (result.errors && result.errors.length > 0)) {
-      setError(result.error || result.errors.join('\n'));
-      return;
-    }
-
-    setUploadCompleted(true);
+    if (!anyError) setUploadCompleted(true);
   };
 
   return (
@@ -210,6 +248,27 @@ function Upload() {
           <div style={{ display: 'flex', flexDirection: "column", justifyContent: 'center', alignItems: 'center' }}>
             <h2 style={{ color: "white", fontSize: "1.2rem", marginBottom: "0.5rem" }}>Uploading Files...</h2>
             <OrbitProgress color="#ffffff" size="medium" textColor="white" />
+            <div style={{ color: "white", marginTop: "0.5rem" }}>
+              Progress: {uploadProgress.current} / {uploadProgress.total} files (
+              {uploadProgress.total > 0
+                ? Math.round((uploadProgress.current / uploadProgress.total) * 100)
+                : 0
+              }%)
+            </div>
+            <div style={{ width: 300, background: "white", borderRadius: 4, marginTop: 8 }}>
+              <div
+                style={{
+                  width: `${uploadProgress.total > 0
+                    ? (uploadProgress.current / uploadProgress.total) * 100
+                    : 0
+                    }%`,
+                  background: "#1E90FF",
+                  height: 12,
+                  borderRadius: 4,
+                  transition: "width 0.2s"
+                }}
+              />
+            </div>
           </div>
         )}
         {isPreparingFiles && (
@@ -265,11 +324,6 @@ function Upload() {
                 </ul>
               </div>
             )}
-          </div>
-        )}
-        {uploadProgress.total > 0 && (
-          <div>
-            Progress: {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
           </div>
         )}
       </div>
