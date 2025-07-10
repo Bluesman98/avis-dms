@@ -74,7 +74,17 @@ function Upload() {
         files: Array.from(targetFiles).map(f => ({ name: f.name })),
       }),
     });
-    const result = await response.json();
+
+    // Safely parse JSON or handle error
+    let result;
+    try {
+      result = await response.json();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      setError("Server returned an invalid response. Please try again or contact support.");
+      setIsPreparingFiles(false);
+      return;
+    }
 
     // Parse errors into categories
     if (result.errors) {
@@ -181,17 +191,6 @@ function Upload() {
           body: file,
         });
         if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name} to S3`);
-
-        // 4. Optionally, update DB record with S3 URL
-        await fetch("/api/upload", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: recordId,
-            s3Url: url.split("?")[0], // S3 object URL without query params
-            idToken,
-          }),
-        });
 
       } catch (err: unknown) {
         setError(prev => {

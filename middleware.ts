@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
       "manifest-src 'self';",
       "worker-src 'self';",
       "child-src 'self';",
-      "require-trusted-types-for 'script';",
+      //"require-trusted-types-for 'script';",
     ].join(" ")
   );
 

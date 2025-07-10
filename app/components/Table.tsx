@@ -11,7 +11,7 @@ function formatFieldName(fieldName: string): string {
     .join(' ');
 }
 
-function Table({ records, fields, fetchDisplayName, showData}: { records: any, fields: string[], fetchDisplayName: (fieldName: string) => Promise<string | null>,  showData: bool }) {
+function Table({ records, fields, fetchDisplayName, showData }: { records: any, fields: string[], fetchDisplayName: (fieldName: string) => Promise<string | null>, showData: bool }) {
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -28,11 +28,15 @@ function Table({ records, fields, fetchDisplayName, showData}: { records: any, f
         names[field] = displayName || formatFieldName(field);
       }
       setDisplayNames(names);
-    
+
     };
     fetchDisplayNames();
-     setIsLoading(false); // End loading after fetching display names
+    setIsLoading(false); // End loading after fetching display names
   }, [fields, fetchDisplayName]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when records change (e.g., after search)
+  }, [records]);
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -211,8 +215,8 @@ function Table({ records, fields, fetchDisplayName, showData}: { records: any, f
       </div>
     );
 
-}
-  else  return <div className="text-center text-white">No data to display</div>;
+  }
+  else return <div className="text-center text-white">No data to display</div>;
 
 }
 
