@@ -26,4 +26,4 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           server-dir: www/avisdemo/ # Change if your web root is different
-          local-dir: ./build/    # Change to your build output directory
+          local-dir: ./next/    # Change to your build output directory
