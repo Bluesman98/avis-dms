@@ -25,45 +25,60 @@ export default function TwoFAVerify() {
     setLoading(true);
     setError(null);
     const uid = localStorage.getItem('uid');
-    const res = await fetch('/api/2fa/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ uid, token: code }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (data.success) {
-      setIsVerified(true);
+    let data;
+    const errorMsg = 'Invalid code';
+    try {
+      const res = await fetch('/api/2fa/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, token: code }),
+      });
+
+      // Try to parse JSON, even on error
       try {
-        if (!uid) {
-          throw new Error("User ID not found in localStorage");
-        }
-        const expired = await isPasswordExpired(uid);
-
-        const response = await fetch('/api/set-password-expired', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ expired, uid }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to set password expired status');
-        }
-
-        if (expired) {
-          router.push("/auth/force-password-reset");
-        } else {
-          window.location.href = "/";
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Login failed");
-        }
+        data = await res.json();
+      } catch {
+        data = {};
       }
-    } else {
-      setError(data.error || 'Invalid code');
+
+      setLoading(false);
+
+      if (res.ok && data.success) {
+        setIsVerified(true);
+        try {
+          if (!uid) {
+            throw new Error("User ID not found in localStorage");
+          }
+          const expired = await isPasswordExpired(uid);
+
+          const response = await fetch('/api/set-password-expired', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expired, uid }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to set password expired status');
+          }
+
+          if (expired) {
+            router.push("/auth/force-password-reset");
+          } else {
+            window.location.href = "/";
+          }
+        } catch (err: unknown) {
+          if (err instanceof Error) {
+            setError(err.message);
+          } else {
+            setError("Login failed");
+          }
+        }
+      } else {
+        setError(data.error || errorMsg);
+      }
+    } catch {
+      setLoading(false);
+      setError("Network error. Please try again.");
     }
   };
 

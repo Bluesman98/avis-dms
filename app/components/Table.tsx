@@ -11,7 +11,7 @@ function formatFieldName(fieldName: string): string {
     .join(' ');
 }
 
-function Table({ records, fields, fetchDisplayName, showData }: { records: any, fields: string[], fetchDisplayName: (fieldName: string) => Promise<string | null>, showData: bool }) {
+function Table({ records, fields, fetchDisplayName, showData, isAdmin }: { records: any, fields: string[], fetchDisplayName: (fieldName: string) => Promise<string | null>, showData: bool, isAdmin: bool }) {
   const [displayNames, setDisplayNames] = useState<Record<string, string>>({});
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -148,7 +148,7 @@ function Table({ records, fields, fetchDisplayName, showData }: { records: any, 
           </thead>
           <tbody className="rounded-md">
             {currentRecords.map((record: any) => (
-              <Record key={record.id} record={record} fields={fields} />
+              <Record key={record.id} record={record} fields={fields} isAdmin={isAdmin} />
             ))}
           </tbody>
         </table>

@@ -30,16 +30,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Fill sheetFileNames and do metadata validation
-  for (const sheet of metaData) {
-    for (const row of sheet) {
+  // Treat metaData as a flat array of rows
+  if (Array.isArray(metaData)) {
+    for (const row of metaData) {
       const filePath = (row["file_path"] || "").trim();
       if (!filePath) {
-        errors.push(`Row in sheet has an empty or undefined file_path.`);
+        errors.push(`Row has an empty or undefined file_path.`);
         continue;
       }
       const fileName = filePath.split("\\").pop() || "";
-      // Only process if fileName is not empty and looks like a file
       if (fileName && /^[^\\\/]+\.pdf$/i.test(fileName)) {
         sheetFileNames.add(fileName);
         if (seenFilePaths.has(filePath)) {
@@ -50,9 +49,7 @@ export async function POST(request: NextRequest) {
         if (!fileNames.includes(fileName)) {
           missingFilesList.push(fileName);
         }
-      }
-      // Optionally, else warn about malformed file names
-      else if (!fileName) {
+      } else if (!fileName) {
         errors.push(`Malformed file_path: "${filePath}"`);
       }
 
@@ -89,31 +86,28 @@ export async function POST(request: NextRequest) {
         continue;
       }
     }
+  } else {
+    errors.push("metaData is not an array.");
   }
 
-  // Now check for excess files (ignore Excel files)
-  for (const fileName of fileNames) {
-    const lower = fileName.toLowerCase();
-    if (
-      !sheetFileNames.has(fileName) &&
-      !lower.endsWith(".xlsx") &&
-      !lower.endsWith(".xls") &&
-      !lower.endsWith(".xlsm")
-    ) {
-      excessFilesList.push(fileName);
-    }
+  // Optionally, check for excess files
+  const excessFiles = fileNames.filter(
+    (name: string) => !sheetFileNames.has(name) && !excelFiles.includes(name)
+  );
+  if (excessFiles.length > 0) {
+    excessFilesList.push(...excessFiles);
   }
 
-  if (missingFilesList.length > 0)
-    errors.push(`Missing files: ${missingFilesList.join(", ")}`);
-  if (excessFilesList.length > 0)
-    errors.push(`Excess files: ${excessFilesList.join(", ")}`);
-  if (duplicateFilesList.length > 0)
+  // Format error output for client
+  if (duplicateFilesList.length > 0) {
     errors.push(`Duplicate file paths: ${duplicateFilesList.join(", ")}`);
-
-  if (errors.length > 0) {
-    return NextResponse.json({ errors }, { status: 400 });
+  }
+  if (missingFilesList.length > 0) {
+    errors.push(`Missing files: ${missingFilesList.join(", ")}`);
+  }
+  if (excessFilesList.length > 0) {
+    errors.push(`Excess files: ${excessFilesList.join(", ")}`);
   }
 
-  return NextResponse.json({ valid: true });
+  return NextResponse.json({ errors });
 }

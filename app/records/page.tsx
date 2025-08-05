@@ -3,28 +3,14 @@
 import { neon } from '@neondatabase/serverless';
 import Records from '../components/Records';
 import ProtectedRoute from '../components/ProtectedRoute';
-
-// Utility: Allow-list for fields to prevent SQL injection via field names
-const ALLOWED_FIELDS = [
-  // Add your allowed field names here, e.g.:
-  "category_name",
-  "category_id",
-  "ar_kikloforias",
-  "imerominia_elegxou",
-  "ar_simvolaiou",
-  "ar_protokollou",
-  "ar_parartimatos",
-  "file_path",
-  "field_name",
-  "display_name",
-  "id",
-];
+import { ALLOWED_FIELDS } from "@/app/utils/allowedFields";
 
 // Validate that all fields are allowed
 function validateFields(fields: string[]): boolean {
   return fields.every(field => ALLOWED_FIELDS.includes(field));
 }
 
+// Fetch all categories with their allowed fields
 async function fetchCategories(userRole: string | null, userPermissions: Record<string, string[]> | null): Promise<{ id: any; name: any; fields: string[] }[]> {
   'use server';
   const sql = neon(`${process.env.DATABASE_URL}`);

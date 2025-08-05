@@ -70,6 +70,9 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     setShowData(bool);
   }
 
+  // Define isAdmin based on roles or permissions, adjust logic as needed
+  const isAdmin = roles && Array.isArray(roles) && roles.includes('admin');
+
   return (
     <div className="">
       <Dropdown handleFilter={handleFilter} categories={categories} selectedCategory={selectedCategory} clearData={clearData} />
@@ -81,7 +84,13 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
         fetchDisplayName={fetchDisplayName}
         setSeachStatus={setSearchStatus}
       />}
-      <Table records={data} fields={selectedFields} fetchDisplayName={fetchDisplayName} showData={showData} />
+      <Table
+        records={data}
+        fields={selectedFields}
+        fetchDisplayName={fetchDisplayName}
+        showData={showData}
+        isAdmin={isAdmin ?? false}
+      />
     </div>
   );
 }

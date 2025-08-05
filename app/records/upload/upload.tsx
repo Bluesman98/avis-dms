@@ -1,16 +1,6 @@
 'use server'
 import { neon } from '@neondatabase/serverless';
-
-const ALLOWED_FIELDS = [
-  "category_id",
-  "ar_kikloforias",
-  "imerominia_elegxou",
-  "ar_simvolaiou",
-  "ar_protokollou",
-  "ar_parartimatos",
-  "file_path",
-  "id",
-];
+import { ALLOWED_FIELDS } from "@/app/utils/allowedFields";
 
 export async function createRecord(
   recordData: Partial<Record<string, string | number>>
@@ -18,9 +8,9 @@ export async function createRecord(
   'use server';
   const sql = neon(`${process.env.DATABASE_URL}`);
 
-  // Filter only allowed fields
-  const filteredEntries = Object.entries(recordData).filter(([key]) =>
-    ALLOWED_FIELDS.includes(key)
+  // Filter only allowed fields and exclude "category_name"
+  const filteredEntries = Object.entries(recordData).filter(
+    ([key]) => ALLOWED_FIELDS.includes(key) && key !== "category_name"
   );
   const fields = filteredEntries.map(([key]) => key);
   const values = filteredEntries.map(([, value]) => value);

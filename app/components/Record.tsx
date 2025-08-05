@@ -2,8 +2,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
-function Record({ record, fields }: { record: any, fields: string[] }) {
+function Record({ record, fields, isAdmin }: { record: any, fields: string[], isAdmin?: boolean }) {
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   const handleRetrieve = async (fileName: string) => {
@@ -63,7 +64,6 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
             const fileName = record.file_path.split('\\').pop();
             if (fileName) {
               await handleRetrieve(`${record.id}_${fileName}`);
-
             } else {
               alert('File name could not be extracted.');
             }
@@ -90,6 +90,15 @@ function Record({ record, fields }: { record: any, fields: string[] }) {
           Download File
         </button>
       </td>
+      {isAdmin && (
+        <td className="p-4 border-t border-slate-200">
+          <Link href={`/records/edit/${record.id}`}>
+            <button className="ml-2 px-2 py-1 bg-blue-500 text-white rounded">
+              Edit
+            </button>
+          </Link>
+        </td>
+      )}
     </tr>
   );
 }

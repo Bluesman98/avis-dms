@@ -1,20 +1,20 @@
 'use client';
 
 import React from 'react';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import ProtectedRoute from '../../components/ProtectedRoute';
-import classes from '../../components/CSS/Upload.module.css'
+import classes from '../../components/CSS/Upload.module.css';
 import { getAuth } from "firebase/auth";
 import { OrbitProgress } from 'react-loading-indicators';
 
 function Upload() {
   const [files, setFiles] = React.useState<FileList | null>(null);
-  const [metaData, setMetadata] = React.useState<unknown[]>([]);
+  const [metaData, setMetadata] = React.useState<Record<string, string>[]>([]);
   const [validationPassed, setValidationPassed] = React.useState(false);
-  const [, setError] = React.useState("");
+  const [error, setError] = React.useState("");
   const [isUploading, setIsUploading] = React.useState(false);
   const [isPreparingFiles, setIsPreparingFiles] = React.useState(false);
-  const [uploadProgress, setUploadProgress] = React.useState<{ current: number; total: number }>({ current: 0, total: 10 });
+  const [uploadProgress, setUploadProgress] = React.useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [uploadCompleted, setUploadCompleted] = React.useState(false);
   const [errorFiles, setErrorFiles] = React.useState<string[]>([]);
   const [duplicateFiles, setDuplicateFiles] = React.useState<string[]>([]);
@@ -24,12 +24,19 @@ function Upload() {
   // Helper to extract metadata from Excel file
   const handleMetadataInput = async (file: File) => {
     const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const temp = [];
-    for (let i = 0; i < workbook.SheetNames.length; i++) {
-      const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[i]]) as Record<string, string>[];
-      temp.push(sheetData);
-    }
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    const temp: Record<string, string>[] = [];
+    workbook.eachSheet((worksheet) => {
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // skip header
+        const rowObj: Record<string, string> = {};
+        worksheet.getRow(1).eachCell((cell, colNumber) => {
+          rowObj[cell.value as string] = row.getCell(colNumber).value?.toString() || "";
+        });
+        temp.push(rowObj);
+      });
+    });
     setMetadata(temp);
     return temp;
   };
@@ -43,21 +50,23 @@ function Upload() {
     setUploadCompleted(false);
     setIsPreparingFiles(true);
 
-    // Reset error states
     setErrorFiles([]);
     setDuplicateFiles([]);
     setMissingFiles([]);
     setExcessFiles([]);
 
     const targetFiles = event.target.files;
-    if (!targetFiles) return;
+    if (!targetFiles) {
+      setIsPreparingFiles(false);
+      return;
+    }
 
-    // Find the Excel file (by extension, not MIME type)
+    // Find the Excel file
     const excelFile = Array.from(targetFiles).find(file =>
       file.name.toLowerCase().endsWith('.xlsx') || file.name.toLowerCase().endsWith('.xls')
     );
 
-    let metaData: Record<string, string>[][] = [];
+    let metaData: Record<string, string>[] = [];
     if (excelFile) {
       metaData = await handleMetadataInput(excelFile);
     }
@@ -75,19 +84,17 @@ function Upload() {
       }),
     });
 
-    // Safely parse JSON or handle error
     let result;
     try {
       result = await response.json();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
+    } catch {
       setError("Server returned an invalid response. Please try again or contact support.");
       setIsPreparingFiles(false);
       return;
     }
 
     // Parse errors into categories
-    if (result.errors) {
+    if (result.errors && result.errors.length > 0) {
       setError(""); // Clear generic error
       const errorList: string[] = [];
       let duplicates: string[] = [];
@@ -160,7 +167,6 @@ function Upload() {
             metaData,
             files: [{
               name: file.name,
-              // Optionally: meta: findMetaForFile(metaData, file.name),
             }],
             idToken,
           }),
@@ -323,6 +329,11 @@ function Upload() {
                 </ul>
               </div>
             )}
+          </div>
+        )}
+        {error && (
+          <div style={{ color: "red", marginTop: "1rem" }}>
+            {error}
           </div>
         )}
       </div>

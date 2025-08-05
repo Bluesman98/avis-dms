@@ -17,27 +17,34 @@ export async function middleware(request: NextRequest) {
     "geolocation=(), microphone=(), camera=()"
   );
 
-  response.headers.set(
-    "Content-Security-Policy",
-    [
-      "default-src 'self';",
-      "script-src 'self' 'unsafe-inline';",
-      "style-src 'self' 'unsafe-inline';",
-      "img-src 'self' data:;",
-      "font-src 'self' https://fonts.gstatic.com data:;",
-      "connect-src 'self' https://avis-dms-bucket.s3.eu-central-1.amazonaws.com https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com;", // <-- S3 bucket added here
-      "object-src 'none';",
-      "frame-ancestors 'none';",
-      "base-uri 'self';",
-      "form-action 'self';",
-      "media-src 'self';",
-      "frame-src 'none';",
-      "manifest-src 'self';",
-      "worker-src 'self';",
-      "child-src 'self';",
-      //"require-trusted-types-for 'script';",
-    ].join(" ")
-  );
+  if (process.env.NODE_ENV === "development") {
+    response.headers.set(
+      "Content-Security-Policy",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    );
+  } else {
+    response.headers.set(
+      "Content-Security-Policy",
+      [
+        "default-src 'self';",
+        "script-src 'self' 'unsafe-inline';",
+        "style-src 'self' 'unsafe-inline';",
+        "img-src 'self' data:;",
+        "font-src 'self' https://fonts.gstatic.com data:;",
+        "connect-src 'self' https://avis-dms-bucket.s3.eu-central-1.amazonaws.com https://kilkisbucket.s3.eu-central-1.amazonaws.com https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com;", // <-- Added kilkisbucket S3
+        "object-src 'none';",
+        "frame-ancestors 'none';",
+        "base-uri 'self';",
+        "form-action 'self';",
+        "media-src 'self';",
+        "frame-src 'none';",
+        "manifest-src 'self';",
+        "worker-src 'self';",
+        "child-src 'self';",
+        //"require-trusted-types-for 'script';",
+      ].join(" ")
+    );
+  }
 
   const { pathname } = request.nextUrl;
 
