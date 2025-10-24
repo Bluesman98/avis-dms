@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
-import { useState } from 'react';
+
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { useAuth } from '../../../lib/AuthContext';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -10,6 +12,20 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+
+  // Check 2FA verification from sessionStorage
+  const is2FAVerified = typeof window !== 'undefined' ? sessionStorage.getItem('is2FAVerified') === 'true' : false;
+
+  // Track if redirect has already happened to avoid infinite loop
+  const hasRedirected = useRef(false);
+  useEffect(() => {
+    if (authLoading) return;
+    if (user && is2FAVerified && !hasRedirected.current) {
+      hasRedirected.current = true;
+      router.replace('/');
+    }
+  }, [user, is2FAVerified, authLoading, router]);
 
   const check2FAEnabled = async (uid: string) => {
     const res = await fetch('/api/2fa/check', {
@@ -51,6 +67,29 @@ export default function SignIn() {
     }
   };
 
+  // Show spinner while loading auth state
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center mt-8">
+        <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md text-center">
+          <div className="text-lg font-semibold">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // If authenticated and 2FA verified, show spinner while redirecting
+  if (user && is2FAVerified) {
+    return (
+      <div className="flex items-center justify-center mt-8">
+        <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md text-center">
+          <div className="text-lg font-semibold">Redirecting...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, show login form
   return (
     <div className="flex items-center justify-center mt-8">
       <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md">

@@ -17,4 +17,5 @@ export const ALLOWED_FIELDS = [
   "afm_promithefti",
   "seira",
   "ar_seiras",
+  "header_comments",
 ];

@@ -1,6 +1,6 @@
 import admin from 'firebase-admin';
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env' }); // Adjust path if needed
+dotenv.config({ path: '.env.production' }); // Adjust path if needed
 
 if (!process.env.FIREBASE_PRIVATE_KEY) {
   throw new Error('FIREBASE_PRIVATE_KEY is not set in .env');
@@ -39,4 +39,4 @@ async function createUserWithProfile(email, password, roles = []) {
 }
 
 // Example usage:
-createUserWithProfile('g.papaderakis@iid.gr', '34385@Iid', ['admin']);
+createUserWithProfile('georgia.skoulika@avis.gr', 'AvisUser12345!', ['ltr']);

@@ -45,6 +45,9 @@ export default function TwoFAVerify() {
 
       if (res.ok && data.success) {
         setIsVerified(true);
+        // Set cookies for middleware
+        document.cookie = "has_2fa_secret=true; path=/";
+        document.cookie = "2fa_verified=true; path=/";
         try {
           if (!uid) {
             throw new Error("User ID not found in localStorage");

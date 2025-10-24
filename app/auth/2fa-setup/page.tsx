@@ -55,6 +55,8 @@ export default function TwoFASetup() {
     const data = await res.json();
     if (data.success) {
       setIsVerified(true);
+      // Set cookie for middleware
+      document.cookie = "has_2fa_secret=true; path=/";
       try {
         const expired = await isPasswordExpired(uid);
         const response = await fetch('/api/set-password-expired', {

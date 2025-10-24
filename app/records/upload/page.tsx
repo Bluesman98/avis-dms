@@ -1,6 +1,8 @@
+
 'use client';
 
 import React from 'react';
+import { saveAs } from 'file-saver';
 import ExcelJS from 'exceljs';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import classes from '../../components/CSS/Upload.module.css';
@@ -8,6 +10,15 @@ import { getAuth } from "firebase/auth";
 import { OrbitProgress } from 'react-loading-indicators';
 
 function Upload() {
+  // State for upload error log
+  const [uploadErrorLog, setUploadErrorLog] = React.useState<string[]>([]);
+
+  // Handler to download upload error log
+  const handleDownloadUploadErrors = () => {
+    if (uploadErrorLog.length === 0) return;
+    const blob = new Blob([uploadErrorLog.join('\n')], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, 'upload_errors.txt');
+  };
   const [files, setFiles] = React.useState<FileList | null>(null);
   const [metaData, setMetadata] = React.useState<Record<string, string>[]>([]);
   const [validationPassed, setValidationPassed] = React.useState(false);
@@ -20,6 +31,17 @@ function Upload() {
   const [duplicateFiles, setDuplicateFiles] = React.useState<string[]>([]);
   const [missingFiles, setMissingFiles] = React.useState<string[]>([]);
   const [excessFiles, setExcessFiles] = React.useState<string[]>([]);
+  const [fileUploadErrors, setFileUploadErrors] = React.useState<{ [fileName: string]: string }>({});
+
+  // State for validation error log
+  const [validationErrorLog, setValidationErrorLog] = React.useState<string[]>([]);
+
+  // Handler to download validation error log
+  const handleDownloadValidationErrors = () => {
+    if (validationErrorLog.length === 0) return;
+    const blob = new Blob([validationErrorLog.join('\n')], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, 'validation_errors.txt');
+  };
 
   // Helper to extract metadata from Excel file
   const handleMetadataInput = async (file: File) => {
@@ -118,6 +140,30 @@ function Upload() {
       setMissingFiles(missing);
       setExcessFiles(excess);
       setValidationPassed(false);
+
+      // Generate validation error report
+      const validationErrorLog: string[] = [];
+      if (errorList.length > 0) {
+        validationErrorLog.push('General Errors:');
+        validationErrorLog.push(...errorList);
+        validationErrorLog.push('');
+      }
+      if (duplicates.length > 0) {
+        validationErrorLog.push('Duplicate Files:');
+        validationErrorLog.push(...duplicates);
+        validationErrorLog.push('');
+      }
+      if (missing.length > 0) {
+        validationErrorLog.push('Missing Files:');
+        validationErrorLog.push(...missing);
+        validationErrorLog.push('');
+      }
+      if (excess.length > 0) {
+        validationErrorLog.push('Excess Files:');
+        validationErrorLog.push(...excess);
+        validationErrorLog.push('');
+      }
+      setValidationErrorLog(validationErrorLog);
     } else {
       setError("");
       setErrorFiles([]);
@@ -125,8 +171,10 @@ function Upload() {
       setMissingFiles([]);
       setExcessFiles([]);
       setValidationPassed(true);
+      setValidationErrorLog([]);
     }
     setIsPreparingFiles(false);
+
   };
 
   // Upload records and files
@@ -143,6 +191,12 @@ function Upload() {
     const user = auth.currentUser;
     const idToken = user ? await user.getIdToken() : undefined;
 
+    // Build a map for fast metadata lookup
+    const metaMap = new Map();
+    metaData.forEach(row => {
+      if (row.file_path) metaMap.set(row.file_path.split('\\').pop(), row);
+    });
+
     const uploadableFiles = Array.from(files).filter(
       file => !file.name.toLowerCase().endsWith('.xlsx') && !file.name.toLowerCase().endsWith('.xls')
     );
@@ -151,6 +205,7 @@ function Upload() {
 
     let uploadedCount = 0;
     let anyError = false;
+    const errorLog: string[] = [];
 
     // Parallel uploads (limit concurrency)
     const CONCURRENCY = 4;
@@ -159,15 +214,16 @@ function Upload() {
       const file = queue.shift();
       if (!file) return;
       try {
+        // Find metadata row for this file
+        const fileMeta = metaMap.get(file.name);
+
         // 1. Create DB record to get _id
         const dbRes = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            metaData,
-            files: [{
-              name: file.name,
-            }],
+            metaData: fileMeta ? [fileMeta] : [],
+            files: [{ name: file.name }],
             idToken,
           }),
         });
@@ -196,20 +252,22 @@ function Upload() {
           headers: { "Content-Type": file.type || "application/octet-stream" },
           body: file,
         });
-        if (!uploadRes.ok) throw new Error(`Failed to upload ${file.name} to S3`);
+        if (!uploadRes.ok) {
+          const errorText = await uploadRes.text();
+          throw new Error(`Failed to upload ${file.name} to S3. Status: ${uploadRes.status}. Message: ${errorText}`);
+        }
 
       } catch (err: unknown) {
-        setError(prev => {
-          let errorMsg = '';
-          if (err instanceof Error) {
-            errorMsg = err.message;
-          } else if (typeof err === 'string') {
-            errorMsg = err;
-          } else {
-            errorMsg = JSON.stringify(err);
-          }
-          return prev + `\n${file.name}: ${errorMsg}`;
-        });
+        let errorMsg = '';
+        if (err instanceof Error) {
+          errorMsg = err.message;
+        } else if (typeof err === 'string') {
+          errorMsg = err;
+        } else {
+          errorMsg = JSON.stringify(err);
+        }
+        setFileUploadErrors(prev => ({ ...prev, [file.name]: errorMsg }));
+        errorLog.push(`${file.name}: ${errorMsg}`);
         anyError = true;
       }
       uploadedCount += 1;
@@ -223,6 +281,12 @@ function Upload() {
     await Promise.all(Array(CONCURRENCY).fill(0).map(uploadNext));
 
     setIsUploading(false);
+
+    if (errorLog.length > 0) {
+      setUploadErrorLog(errorLog);
+    } else {
+      setUploadErrorLog([]);
+    }
 
     if (!anyError) setUploadCompleted(true);
   };
@@ -327,6 +391,32 @@ function Upload() {
                     <li key={index}>{file}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {/* Download button for validation errors */}
+            {validationErrorLog.length > 0 && (
+              <div style={{ marginTop: '1rem' }}>
+                <button onClick={handleDownloadValidationErrors} style={{ padding: '0.5rem 1rem', background: '#1E90FF', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                  Download Validation Error Report
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        {/* Per-file upload errors */}
+        {Object.keys(fileUploadErrors).length > 0 && (
+          <div style={{ color: "red", marginTop: "1rem" }}>
+            <h3>File Upload Errors:</h3>
+            <ul>
+              {Object.entries(fileUploadErrors).map(([file, err], idx) => (
+                <li key={idx}><strong>{file}:</strong> {err}</li>
+              ))}
+            </ul>
+            {uploadErrorLog.length > 0 && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <button onClick={handleDownloadUploadErrors} style={{ padding: '0.5rem 1rem', background: '#B22222', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>
+                  Download Upload Error Report
+                </button>
               </div>
             )}
           </div>

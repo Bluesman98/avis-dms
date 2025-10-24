@@ -4,8 +4,8 @@ import xlsx from "xlsx";
 
 // CONFIGURE THESE
 const missingFilesListPath = "C:\\Users\\gpap\\source\\repos\\dms\\missing_files.txt"; // Text file with missing file paths
-const sourceDirectory = "C:\\Users\\gpap\\Desktop\\avis_batch_2"; // Where your files are currently stored
-const excelFilePath = "C:\\Users\\gpap\\Desktop\\avis_batch_2\\IID_INDEXING_202508010915.xlsx"; // Your Excel metadata file
+const sourceDirectory = "C:\\Users\\gpap\\Desktop\\Batch_3_Part2\\"; // Where your files are currently stored
+const excelFilePath = "C:\\Users\\gpap\\Desktop\\Batch_3_Part2\\Part2.xlsx"; // Your Excel metadata file
 const targetDirectory = "C:\\Users\\gpap\\Desktop\\missing_files_upload"; // Where to copy missing files
 
 function ensureDirSync(dir) {
@@ -34,17 +34,18 @@ function copyFileFlat(filePath) {
     }
 }
 
+
 function main() {
-    // 1. Read missing file paths
+    // 1. Read missing file names (ignore any path info)
     const missingFiles = fs.readFileSync(missingFilesListPath, "utf-8")
         .split(/\r?\n/)
         .filter(line => line.trim().length > 0)
-        .map(line => path.basename(line)); // Only base names
+        .map(line => path.basename(line)); // Only base names, e.g., 123.pdf
 
     // 2. Copy each missing file by base name only, skip if already exists
     missingFiles.forEach(copyFileFlat);
 
-    // 3. Filter Excel metadata for missing files only
+    // 3. Filter Excel metadata for missing files only (by base name)
     const workbook = xlsx.readFile(excelFilePath);
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];

@@ -15,7 +15,7 @@ config({ path: resolve(__dirname, "../.env.production") });
 // Use DATABASE_URL from env
 const sql = neon(process.env.DATABASE_URL);
 
-const excelFilePath = "C:\\Users\\gpap\\Desktop\\avis_batch_2\\IID_INDEXING_202508010915.xlsx";
+const excelFilePath = "C:\\Users\\gpap\\Desktop\\Batch_3_Part2\\Part2.xlsx"; // Path to your Excel file
 const fileNameColumn = "file_path"; // Now comparing full file_path
 const tableName = "records"; // Adjust if your table is named differently
 const outputFilePath = "C:\\Users\\gpap\\source\\repos\\dms\\missing_files.txt"; // Output file for missing paths

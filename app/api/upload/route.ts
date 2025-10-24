@@ -6,6 +6,21 @@ import { ALLOWED_FIELDS } from "@/app/utils/allowedFields";
 export async function POST(request: NextRequest) {
   const { metaData, files, idToken } = await request.json();
 
+  // Reject files named 'trigger_error.txt' for testing upload error logging
+  if (
+    files &&
+    Array.isArray(files) &&
+    files.some((f: { name: string }) => f.name === "trigger_error.pdf")
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Upload of 'trigger_error.txt' is intentionally blocked for testing.",
+      },
+      { status: 400 }
+    );
+  }
+
   if (!idToken || typeof idToken !== "string") {
     return NextResponse.json(
       { error: "No Firebase ID token provided" },
