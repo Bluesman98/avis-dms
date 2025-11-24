@@ -54,7 +54,7 @@ function Records({ filterCategory, fetchCategories, simpleFilter, advancedFilter
     console.log('User: ', user);
     console.log('Roles: ', roles);
     console.log('Permissions: ', permissions);
-  }, [roles, permissions]); // Add loading as a dependency
+  }, [roles, permissions, loading, user, fetchCategories]);
 
   if (loading) {
     return <div className="flex justify-center items-center"> <OrbitProgress color="#ffffff" size="medium" text="" textColor="white" /></div>;

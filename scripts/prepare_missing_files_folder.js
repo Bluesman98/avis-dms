@@ -4,9 +4,9 @@ import xlsx from "xlsx";
 
 // CONFIGURE THESE
 const missingFilesListPath = "C:\\Users\\gpap\\source\\repos\\dms\\missing_files.txt"; // Text file with missing file paths
-const sourceDirectory = "C:\\Users\\gpap\\Desktop\\Batch_3_Part2\\"; // Where your files are currently stored
-const excelFilePath = "C:\\Users\\gpap\\Desktop\\Batch_3_Part2\\Part2.xlsx"; // Your Excel metadata file
-const targetDirectory = "C:\\Users\\gpap\\Desktop\\missing_files_upload"; // Where to copy missing files
+const sourceDirectory = "C:\\Users\\gpap\\Desktop\\Avis Batches\\avis_batch_05\\"; // Where your files are currently stored
+const excelFilePath = "C:\\Users\\gpap\\Desktop\\Avis Batches\\avis_batch_05\\IID_INDEXING_202511111644.xlsx"; // Your Excel metadata file
+const targetDirectory = "C:\\Users\\gpap\\Desktop\\Avis Batches\\missing_files_upload"; // Where to copy missing files
 
 function ensureDirSync(dir) {
     if (!fs.existsSync(dir)) {

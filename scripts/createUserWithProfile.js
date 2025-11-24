@@ -39,4 +39,4 @@ async function createUserWithProfile(email, password, roles = []) {
 }
 
 // Example usage:
-createUserWithProfile('georgia.skoulika@avis.gr', 'AvisUser12345!', ['ltr']);
+createUserWithProfile('polyxeni.bololi@avis.gr', 'AvisUser12345!', ['ltr']);

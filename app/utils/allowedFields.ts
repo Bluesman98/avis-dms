@@ -18,4 +18,5 @@ export const ALLOWED_FIELDS = [
   "seira",
   "ar_seiras",
   "header_comments",
+  "ar_eggrafhs",
 ];

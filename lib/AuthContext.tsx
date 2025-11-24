@@ -18,25 +18,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTO_LOGOUT_MINUTES = 30; // Set auto logout time in minutes
 
 export function useAutoLogout() {
-  const { setIsVerified } = useTwoFA(); // <-- Move inside the hook
-
-  const signOut = async () => {
-    // Sign out from Firebase
+  const { setIsVerified } = useTwoFA();
+  const signOut = React.useCallback(async () => {
     await auth.signOut();
-    // Clear all localStorage
     localStorage.clear();
-
-    // Call the API route to clear httpOnly cookies
     await fetch('/api/auth/signout', {
       method: 'POST',
       credentials: 'include',
     });
-
     setIsVerified(false);
-
-    // Redirect to sign-in page
     window.location.href = "/auth/signin";
-  };
+  }, [setIsVerified]);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -60,7 +52,7 @@ export function useAutoLogout() {
       window.removeEventListener("keydown", resetTimer);
       window.removeEventListener("click", resetTimer);
     };
-  }, []);
+  }, [signOut]);
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

@@ -57,6 +57,9 @@ function Header() {
             {roles?.includes('admin') && (
               <Link href="/records/upload"><div>Upload</div></Link>
             )}
+            {roles?.includes('admin') && (
+              <Link href="/records/update"><div>Update</div></Link>
+            )}
           </nav>
           <div className={classes.user}>
             <h4>{user?.email}</h4>
