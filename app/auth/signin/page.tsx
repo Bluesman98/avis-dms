@@ -3,9 +3,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '../../../lib/AuthContext';
-
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,6 +36,9 @@ export default function SignIn() {
     return data.enabled;
   };
 
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetLoading, setResetLoading] = useState(false);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -50,33 +52,42 @@ export default function SignIn() {
       const userCred = await signInWithEmailAndPassword(auth, email, password);
       localStorage.setItem('uid', userCred.user.uid);
       localStorage.setItem('email', userCred.user.email ?? '');
-
-      // Set a cookie for middleware authentication check
       document.cookie = "token=1; path=/";
-
       const enabled = await check2FAEnabled(userCred.user.uid);
-
       if (!enabled) {
         router.push('/auth/2fa-setup');
       } else {
         router.push('/auth/2fa-verify');
       }
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(err.message || 'Failed to sign in.');
+    } finally {
       setLoading(false);
     }
   };
 
-  // Show spinner while loading auth state
-  if (authLoading) {
-    return (
-      <div className="flex items-center justify-center mt-8">
-        <div className="bg-white shadow-md rounded-lg p-8 w-full max-w-md text-center">
-          <div className="text-lg font-semibold">Loading...</div>
-        </div>
-      </div>
-    );
-  }
+  const handlePasswordReset = async () => {
+    setResetMessage(null);
+    setResetError(null);
+    if (!email) {
+      setResetError('Please enter your email above first.');
+      setTimeout(() => setResetError(null), 5000);
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, email);
+      setResetMessage('Password reset email sent. Check your inbox.');
+      setTimeout(() => setResetMessage(null), 5000);
+    } catch (err: any) {
+      setResetError(err.message || 'Failed to send reset email.');
+      setTimeout(() => setResetError(null), 5000);
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
 
   // If authenticated and 2FA verified, show spinner while redirecting
   if (user && is2FAVerified) {
@@ -126,6 +137,23 @@ export default function SignIn() {
               {loading ? "Checking 2FA..." : "Sign In"}
             </button>
           </form>
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              className="text-blue-600 underline text-sm"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+              onClick={handlePasswordReset}
+              disabled={resetLoading}
+            >
+              {resetLoading ? 'Sending...' : 'Forgot Password?'}
+            </button>
+            {resetMessage && (
+              <div className="mt-2 text-green-600 text-sm font-semibold">{resetMessage}</div>
+            )}
+            {resetError && (
+              <div className="mt-2 text-red-600 text-sm font-semibold">{resetError}</div>
+            )}
+          </div>
         </div>
       </div>
     </div>
